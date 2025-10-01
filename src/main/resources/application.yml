@@ -1,0 +1,21 @@
+server:
+  port: 5001
+
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/trader_circle
+    username: root
+    password: iamBatman@123
+
+  jpa:
+    hibernate:
+      ddl-auto: create
+    show-sql: true
+
+app:
+  jwtSecret: batman
+  jwtExpireationMs: 10000
+
+security:
+  secret-key: 7391ac4d8b170a4d72e959fc7e53e5c3b5ac60b72030ac5c33f23efa6ba99b22
+  expiration: 3600000
