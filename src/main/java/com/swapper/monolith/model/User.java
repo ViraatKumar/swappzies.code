@@ -14,11 +14,18 @@ public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
+    @Column(unique = true)
+    String userId;
     @Column(nullable = false)
     String username;
     String password;
     String email;
     String phoneNo;
-    @Enumerated(EnumType.STRING)
-    Role role;
+    @ManyToMany
+    @JoinTable(
+            name = "user_roles",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "role_id")
+    )
+    Set<Roles> roles;
 }

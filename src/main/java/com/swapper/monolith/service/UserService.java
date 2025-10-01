@@ -2,9 +2,15 @@ package com.swapper.monolith.service;
 
 import com.swapper.monolith.dto.UserDTO;
 import com.swapper.monolith.dto.enums.Role;
+import com.swapper.monolith.model.Roles;
 import com.swapper.monolith.model.User;
 import com.swapper.monolith.dto.SignUpRequest;
+import com.swapper.monolith.repository.RoleRepository;
 import com.swapper.monolith.repository.UserRepository;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.experimental.FieldDefaults;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -12,19 +18,27 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import javax.management.relation.RoleNotFoundException;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 @Service
+@AllArgsConstructor(onConstructor = @__(@Autowired))
+@FieldDefaults(level = AccessLevel.PRIVATE,makeFinal = true)
 public class UserService  {
-    @Autowired
     UserRepository userRepository;
-    @Autowired
-    private PasswordEncoder passwordEncoder;
+    PasswordEncoder passwordEncoder;
+    RoleRepository roleRepository;
 
 
     public String addUser(SignUpRequest signUpRequest) {
+
         User user = new User();
         user.setUsername(signUpRequest.getEmail());
         user.setPassword(passwordEncoder.encode(signUpRequest.getPassword()));
-        user.setRole(Role.USER);
+        Set<Roles> userRoles = setUserRoles(Set.of(Role.USER));
+        user.setRoles(userRoles);
         userRepository.save(user);
         return "User Added Successfully";
     }
@@ -42,5 +56,22 @@ public class UserService  {
                 .password(user.getPassword())
                 .roles(Role.USER.name()) // or map from user.getRole()
                 .build();
+    }
+    private Set<Roles> setUserRoles(Set<Role> requesedRoles) {
+        Set<Roles> userRoles = new HashSet<>();
+        roleRepository.findAll().forEach(role -> {
+            try {
+                if (requesedRoles.contains(role.getRole())) {
+                    userRoles.add(role);
+                } else {
+                    throw new RoleNotFoundException(role.getRole().name());
+                }
+            }
+            catch (RoleNotFoundException e) {
+                LoggerFactory.getLogger(UserService.class).error(e.getMessage());
+            }
+        });
+
+        return userRoles;
     }
 }
