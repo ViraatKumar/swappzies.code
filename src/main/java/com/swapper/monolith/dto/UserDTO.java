@@ -4,15 +4,19 @@ import com.swapper.monolith.dto.enums.Role;
 import com.swapper.monolith.model.Roles;
 import com.swapper.monolith.model.User;
 import jakarta.persistence.*;
+import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
+import lombok.experimental.FieldDefaults;
 
 import java.util.Set;
 
 @Data
 @Builder
+@FieldDefaults(level = AccessLevel.PRIVATE,makeFinal = true)
 public class UserDTO {
-    private Long id;
+    private long id;
+    String userId;
     String username;
     String password;
     String email;
@@ -21,9 +25,10 @@ public class UserDTO {
     public static  UserDTO from(User user) {
        return UserDTO.builder()
                .id(user.getId())
+               .userId(user.getUserId())
                .username(user.getUsername())
-               .password(user.getPassword())
                .email(user.getEmail())
+               .password(user.getPassword())
                .phoneNo(user.getPhoneNo())
                .role(user.getRoles())
                .build();

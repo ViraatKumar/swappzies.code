@@ -1,10 +1,12 @@
 package com.swapper.monolith.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import jakarta.validation.constraints.Email;
 import lombok.Data;
 
 @Data
 public class LoginRequest {
-    private String username;
+    @Email
+    private String email;
     private String password;
 }

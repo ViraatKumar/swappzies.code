@@ -1,8 +1,8 @@
 package com.swapper.monolith.service;
 
+import com.swapper.monolith.dto.EmailSignUpRequest;
 import com.swapper.monolith.dto.LoginRequest;
 import com.swapper.monolith.dto.LoginResponse;
-import com.swapper.monolith.dto.SignUpRequest;
 import com.swapper.monolith.security.utils.JwtUtil;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -23,21 +23,21 @@ public class AuthService {
     JwtUtil jwtUtil;
     UserService userService;
 
-    public LoginResponse login(@RequestBody LoginRequest loginRequest) {
+    public LoginResponse login(LoginRequest loginRequest) {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
-                        loginRequest.getUsername(),
+                        loginRequest.getEmail(),
                         loginRequest.getPassword())
         );
         if(authentication.isAuthenticated()) {
-            String token = jwtUtil.generateToken(new HashMap<>(),loginRequest.getUsername());
+            String token = jwtUtil.generateToken(new HashMap<>(),loginRequest.getEmail());
             return new LoginResponse(token);
         }
         return new LoginResponse("Invalid username or password");
     }
 
-    public String register(@RequestBody SignUpRequest signUpRequest) {
-        return userService.addUser(signUpRequest);
+    public String register(@RequestBody EmailSignUpRequest emailSignUpRequest) {
+        return userService.addUser(emailSignUpRequest);
     }
 
 }

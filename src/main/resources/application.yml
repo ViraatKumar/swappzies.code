@@ -9,11 +9,8 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: none
+      ddl-auto: update
     show-sql: true
-  sql:
-    init:
-      mode: always
 app:
   jwtSecret: batman
   jwtExpireationMs: 10000

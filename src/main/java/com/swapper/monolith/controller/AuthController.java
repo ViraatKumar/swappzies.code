@@ -1,9 +1,10 @@
 package com.swapper.monolith.controller;
 
+import com.swapper.monolith.dto.EmailSignUpRequest;
 import com.swapper.monolith.dto.LoginRequest;
 import com.swapper.monolith.dto.LoginResponse;
-import com.swapper.monolith.dto.SignUpRequest;
 import com.swapper.monolith.service.AuthService;
+import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -18,12 +19,12 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
     AuthService authService;
     @PostMapping("/user-login")
-    public ResponseEntity<LoginResponse> userLogin(@RequestBody LoginRequest loginRequest) {
+    public ResponseEntity<LoginResponse> userLogin(@Valid @RequestBody LoginRequest loginRequest) {
         return ResponseEntity.ok(authService.login(loginRequest));
     }
 
     @PostMapping("/user-register")
-    public ResponseEntity<String> userRegister(@RequestBody SignUpRequest signUpRequest) {
-        return ResponseEntity.ok(authService.register(signUpRequest));
+    public ResponseEntity<String> userRegister(@Valid @RequestBody EmailSignUpRequest emailSignUpRequest) {
+        return ResponseEntity.ok(authService.register(emailSignUpRequest));
     }
 }

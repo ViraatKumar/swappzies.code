@@ -9,19 +9,12 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 @Service
-public class TraderUserDetailsImpl implements UserDetailsService {
+public class TraderUserDetailsServiceImpl implements UserDetailsService {
     UserRepository userRepository;
-    public TraderUserDetailsImpl(UserRepository userRepository) {
+    public TraderUserDetailsServiceImpl(UserRepository userRepository) {
         this.userRepository = userRepository;
     }
-//    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-//        User user =  userRepository.findByUsername(username).orElseThrow(()-> new UsernameNotFoundException("User not found"));
-//        return org.springframework.security.core.userdetails.User
-//                .withUsername(user.getUsername())
-//                .password(user.getPassword())
-//                .roles(Role.USER.name()) // or map from user.getRole()
-//                .build();
-//    }
+
     @Override
     @Transactional
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
@@ -29,4 +22,4 @@ public class TraderUserDetailsImpl implements UserDetailsService {
                .orElseThrow(()-> new RuntimeException());
        return TradeUserDetailsImpl.build(user);
     }
-}
+    }

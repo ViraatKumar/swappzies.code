@@ -1,10 +1,12 @@
 package com.swapper.monolith.service;
 
+import com.swapper.monolith.dto.EmailSignUpRequest;
 import com.swapper.monolith.dto.UserDTO;
 import com.swapper.monolith.dto.enums.Role;
+import com.swapper.monolith.exception.CustomExceptions.DuplicatedResourceException;
+import com.swapper.monolith.exception.enums.ApiResponses;
 import com.swapper.monolith.model.Roles;
 import com.swapper.monolith.model.User;
-import com.swapper.monolith.dto.SignUpRequest;
 import com.swapper.monolith.repository.RoleRepository;
 import com.swapper.monolith.repository.UserRepository;
 import lombok.AccessLevel;
@@ -12,6 +14,7 @@ import lombok.AllArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -19,9 +22,11 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import javax.management.relation.RoleNotFoundException;
+import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 
 @Service
 @AllArgsConstructor(onConstructor = @__(@Autowired))
@@ -32,30 +37,28 @@ public class UserService  {
     RoleRepository roleRepository;
 
 
-    public String addUser(SignUpRequest signUpRequest) {
-
-        User user = new User();
-        user.setUsername(signUpRequest.getEmail());
-        user.setPassword(passwordEncoder.encode(signUpRequest.getPassword()));
-        Set<Roles> userRoles = setUserRoles(Set.of(Role.USER));
-        user.setRoles(userRoles);
-        userRepository.save(user);
+    public String addUser(EmailSignUpRequest emailSignUpRequest)  {
+        User user = userRepository.findByEmail(emailSignUpRequest.getEmail()).orElse(null);
+        if(user!=null){
+            throw new DuplicatedResourceException(ApiResponses.USER_DUPLICATED_ERROR);
+        }
+        User newUser =  User.builder()
+                .email(emailSignUpRequest.getEmail())
+                .username(emailSignUpRequest.getEmail())
+                .password(passwordEncoder.encode(emailSignUpRequest.getPassword()))
+                .userId(UUID.randomUUID().toString())
+                .roles(setUserRoles(Set.of(Role.USER)))
+                .phoneNo(null)
+                .build();
+        userRepository.save(newUser);
         return "User Added Successfully";
     }
-    public UserDTO getUser(String username){
-        User user = userRepository.findByUsername(username).orElseGet(null);
+    public UserDTO getUser(UserDetails userDetails){
+        User user = userRepository.findByUsername(userDetails.getUsername()).orElseThrow(()-> new UsernameNotFoundException("Username not found - "+userDetails.getUsername()));
         if(user == null){
             throw new UsernameNotFoundException("User not found");
         }
         return UserDTO.from(user);
-    }
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        User user =  userRepository.findByUsername(username).orElseThrow(()-> new UsernameNotFoundException("User not found"));
-        return org.springframework.security.core.userdetails.User
-                .withUsername(user.getUsername())
-                .password(user.getPassword())
-                .roles(Role.USER.name()) // or map from user.getRole()
-                .build();
     }
     private Set<Roles> setUserRoles(Set<Role> requesedRoles) {
         Set<Roles> userRoles = new HashSet<>();
@@ -71,7 +74,9 @@ public class UserService  {
                 LoggerFactory.getLogger(UserService.class).error(e.getMessage());
             }
         });
-
         return userRoles;
+    }
+    public User findByUserId(String userId) {
+        return userRepository.findByUserId(userId).orElse(null);
     }
 }
