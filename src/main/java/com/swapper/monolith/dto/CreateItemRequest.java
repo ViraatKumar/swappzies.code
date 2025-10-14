@@ -1,18 +1,10 @@
 package com.swapper.monolith.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.swapper.monolith.dto.enums.Condition;
-import com.swapper.monolith.dto.enums.Console;
-import com.swapper.monolith.model.ItemImage;
-import com.swapper.monolith.model.User;
-import jakarta.persistence.*;
+import com.swapper.monolith.TradeService.dto.enums.Condition;
+import com.swapper.monolith.TradeService.dto.enums.Console;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
-import lombok.Builder;
-import lombok.Data;
-import org.hibernate.annotations.CreationTimestamp;
 
-import java.util.Date;
 import java.util.List;
 
 public record CreateItemRequest(

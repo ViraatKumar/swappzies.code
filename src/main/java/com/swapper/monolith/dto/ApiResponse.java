@@ -9,5 +9,4 @@ import org.springframework.http.HttpStatus;
 
 @Builder
 public record ApiResponse<T>(T payload, String message, HttpStatus status) {
-
 }

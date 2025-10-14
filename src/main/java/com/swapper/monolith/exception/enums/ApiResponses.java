@@ -11,6 +11,7 @@ public enum ApiResponses {
     USER_DUPLICATED_ERROR(HttpStatus.CONFLICT,"This User Already Exists"),
     RESOURCE_NOT_FOUND(HttpStatus.NOT_FOUND, "Resource Not Found"),
     CREATED(HttpStatus.CREATED, "Created Successfully"),
+    OK(HttpStatus.OK, "Retrieved Successfully"),
     ;
     HttpStatus httpStatus;
     String message;

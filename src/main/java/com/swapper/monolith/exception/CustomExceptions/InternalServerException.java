@@ -1,4 +1,4 @@
-package com.swapper.monolith.exception;
+package com.swapper.monolith.exception.CustomExceptions;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ResponseStatus;

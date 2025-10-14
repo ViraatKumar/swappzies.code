@@ -1,9 +1,10 @@
-package com.swapper.monolith.model;
+package com.swapper.monolith.TradeService.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.swapper.monolith.dto.CreateItemRequest;
-import com.swapper.monolith.dto.enums.Condition;
-import com.swapper.monolith.dto.enums.Console;
+import com.swapper.monolith.TradeService.dto.enums.Condition;
+import com.swapper.monolith.TradeService.dto.enums.Console;
+import com.swapper.monolith.model.User;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -15,14 +16,18 @@ import java.util.List;
 
 @Data
 @Entity
-@Table(name="item")
+@Table(name="game")
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class Item {
+public class Game {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(name="game_id",unique = true)
+    private String gameId;
+
     @Enumerated(EnumType.STRING)
     private Console console;
 
@@ -56,9 +61,9 @@ public class Item {
     @Builder.Default
     private boolean published = false;
 
-    public static Item from(CreateItemRequest createItemRequest) {
+    public static Game from(CreateItemRequest createItemRequest) {
 
-        return Item.builder()
+        return Game.builder()
                 .title(createItemRequest.title())
                 .description(createItemRequest.description())
                 .price(createItemRequest.price())

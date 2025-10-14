@@ -1,4 +1,4 @@
-package com.swapper.monolith.dto.enums;
+package com.swapper.monolith.TradeService.dto.enums;
 
 import lombok.Getter;
 

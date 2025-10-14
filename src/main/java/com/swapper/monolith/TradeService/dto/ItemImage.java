@@ -1,4 +1,4 @@
-package com.swapper.monolith.model;
+package com.swapper.monolith.TradeService.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
@@ -23,5 +23,5 @@ public class ItemImage {
     @ManyToOne(fetch=FetchType.LAZY)
     @JoinColumn(name="item_id",nullable = false)
     @JsonIgnore
-    private Item item;
+    private Game item;
 }

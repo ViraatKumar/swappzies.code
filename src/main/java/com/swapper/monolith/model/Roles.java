@@ -6,7 +6,7 @@ import lombok.Data;
 
 @Data
 @Entity
-@Table(name="roles")
+@Table(name="\"role\"")
 public class Roles {
     @Id
     private Long id;
