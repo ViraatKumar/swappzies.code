@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 public class GlobalExceptionHandler {
     @ExceptionHandler({Exception.class})
     public ResponseEntity<?> handleException(Exception e, HttpServletRequest request){
-        LoggerFactory.getLogger(GlobalExceptionHandler.class).error("Exception caught in GlobalExceptionHandler - "+e.getMessage());
+         LoggerFactory.getLogger(GlobalExceptionHandler.class).error("Exception caught in GlobalExceptionHandler - "+e.getMessage());
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ErrorResponse.errorBuilder()
                 .message(e.getMessage())
                 .path(request.getServletPath())

@@ -5,13 +5,11 @@ import com.swapper.monolith.service.UserService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/user")
+@RequestMapping("/v1/user")
 @PreAuthorize("hasAuthority('USER')")
 public class UserController {
     private final UserService userService;
@@ -25,4 +23,5 @@ public class UserController {
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
        return ResponseEntity.ok(userService.getUser(userDetails));
     }
+
 }

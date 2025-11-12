@@ -9,11 +9,8 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: create
+      ddl-auto: update
     show-sql: true
-app:
-  jwtSecret: batman
-  jwtExpireationMs: 10000
 
 security:
   secret-key: 7391ac4d8b170a4d72e959fc7e53e5c3b5ac60b72030ac5c33f23efa6ba99b22

@@ -1,40 +1,50 @@
 package com.swapper.monolith.ItemService.impls;
 
+import com.swapper.monolith.ItemService.ItemMapper;
 import com.swapper.monolith.ItemService.ItemService;
+import com.swapper.monolith.ItemService.dto.GameDTO;
 import com.swapper.monolith.TradeService.dto.enums.ItemType;
-import com.swapper.monolith.dto.ApiResponse;
-import com.swapper.monolith.dto.CreateItemRequest;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
+/**
+ * Serivce eima2
+ */
 @Service
-public class Game implements ItemService {
+@RequiredArgsConstructor
+public class Game implements ItemService<GameDTO> {
+
+    ItemMapper itemMapper;
+
     @Override
-    public ApiResponse<?> create(Object createItemRequest) {
+    public GameDTO create(GameDTO createRequest) {
         return null;
     }
 
     @Override
-    public ApiResponse<?> update(String id, Object updateItemRequest) {
+    public GameDTO update(String id, GameDTO updateRequest) {
         return null;
     }
 
     @Override
-    public void delete(Object deleteItemRequest) {
+    public void delete(String id) {
 
     }
 
     @Override
-    public ApiResponse<?> getUserItems(String itemType, String userId) {
-        return null;
+    public List<GameDTO> getUserItems(String userId) {
+        return List.of();
     }
 
     @Override
-    public ApiResponse<?> getUserItem(String itemType, String userId, String itemId) {
+    public GameDTO getUserItem(String userId, String itemId) {
         return null;
     }
 
     @Override
     public ItemType getItemType() {
-        return ItemType.GAMES;
+        return null;
     }
 }

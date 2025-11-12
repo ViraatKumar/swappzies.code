@@ -12,6 +12,10 @@ import lombok.experimental.FieldDefaults;
 @Data
 @FieldDefaults(level = AccessLevel.PRIVATE,makeFinal = true)
 public class EmailSignUpRequest {
+
+    @NotBlank
+    String username;
+
     @NotBlank(message="Email is Required")
     @Email
     String email;

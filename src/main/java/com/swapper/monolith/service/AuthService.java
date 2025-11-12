@@ -1,5 +1,6 @@
 package com.swapper.monolith.service;
 
+import com.swapper.monolith.dto.ApiResponse;
 import com.swapper.monolith.dto.EmailSignUpRequest;
 import com.swapper.monolith.dto.LoginRequest;
 import com.swapper.monolith.dto.LoginResponse;
@@ -26,11 +27,11 @@ public class AuthService {
     public LoginResponse login(LoginRequest loginRequest) {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
-                        loginRequest.getEmail(),
+                        loginRequest.getUsername(),
                         loginRequest.getPassword())
         );
         if(authentication.isAuthenticated()) {
-            String token = jwtUtil.generateToken(new HashMap<>(),loginRequest.getEmail());
+            String token = jwtUtil.generateToken(new HashMap<>(),loginRequest.getUsername());
             return new LoginResponse(token);
         }
         return new LoginResponse("Invalid username or password");
@@ -40,4 +41,7 @@ public class AuthService {
         return userService.addUser(emailSignUpRequest);
     }
 
+    public ApiResponse<Boolean> checkUsername(String username){
+        return userService.checkUsername(username);
+    }
 }

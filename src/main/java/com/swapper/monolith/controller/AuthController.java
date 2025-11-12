@@ -1,5 +1,6 @@
 package com.swapper.monolith.controller;
 
+import com.swapper.monolith.dto.ApiResponse;
 import com.swapper.monolith.dto.EmailSignUpRequest;
 import com.swapper.monolith.dto.LoginRequest;
 import com.swapper.monolith.dto.LoginResponse;
@@ -13,7 +14,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 @Controller
-@RequestMapping("/auth")
+@RequestMapping("/v1/auth")
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class AuthController {
@@ -26,5 +27,11 @@ public class AuthController {
     @PostMapping("/user-register")
     public ResponseEntity<String> userRegister(@Valid @RequestBody EmailSignUpRequest emailSignUpRequest) {
         return ResponseEntity.ok(authService.register(emailSignUpRequest));
+    }
+
+    @GetMapping("/username-exists")
+    public ResponseEntity<ApiResponse<Boolean>> checkUsername(@RequestParam("username") String username){
+        ApiResponse<Boolean> response = authService.checkUsername(username);
+        return ResponseEntity.status(response.status()).body(response);
     }
 }

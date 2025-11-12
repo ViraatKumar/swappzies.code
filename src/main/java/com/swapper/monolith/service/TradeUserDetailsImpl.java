@@ -29,7 +29,7 @@ public class TradeUserDetailsImpl implements UserDetails {
         return new TradeUserDetailsImpl(
                 user.getId(),
                 user.getUserId(),
-                user.getEmail(),
+                user.getUsername(),
                 user.getPassword(),
                 roles
         );

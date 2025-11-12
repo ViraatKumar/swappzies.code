@@ -17,7 +17,11 @@ import java.util.Set;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name="\"user\"")
+@Table(name="\"user\"",indexes = {
+        @Index(name="idx_user_id",columnList = "user_id"),
+        @Index(name="idx_username",columnList = "username"),
+        @Index(name="idx_email",columnList = "email")
+})
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -30,7 +34,7 @@ public class User {
     @Column(unique = true)
     String username;
     String email;
-    @Column(name="hello")
+    @Column(name="phone_no")
     String phoneNo;
 
     @ManyToMany

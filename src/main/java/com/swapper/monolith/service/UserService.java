@@ -1,5 +1,6 @@
 package com.swapper.monolith.service;
 
+import com.swapper.monolith.dto.ApiResponse;
 import com.swapper.monolith.dto.EmailSignUpRequest;
 import com.swapper.monolith.dto.UserDTO;
 import com.swapper.monolith.dto.enums.Role;
@@ -40,13 +41,13 @@ public class UserService  {
 
 
     public String addUser(EmailSignUpRequest emailSignUpRequest)  {
-        User user = userRepository.findByEmail(emailSignUpRequest.getEmail()).orElse(null);
+        User user = userRepository.findByUsernameOrEmail(emailSignUpRequest.getUsername(),emailSignUpRequest.getEmail()).orElse(null);
         if(user!=null){
             throw new DuplicatedResourceException(ApiResponses.USER_DUPLICATED_ERROR);
         }
         User newUser =  User.builder()
                 .email(emailSignUpRequest.getEmail())
-                .username(emailSignUpRequest.getEmail())
+                .username(emailSignUpRequest.getUsername())
                 .password(passwordEncoder.encode(emailSignUpRequest.getPassword()))
                 .userId(UUID.randomUUID().toString())
                 .roles(setUserRoles(Set.of(Role.USER)))
@@ -80,6 +81,15 @@ public class UserService  {
             throw new InternalServerException("some role probably doesnt exist - Requested Roles - " + requestedRoles);
         }
         return userRoles;
+    }
+    public ApiResponse<Boolean> checkUsername(String username){
+        boolean userExists = userRepository.findByUsername(username).isPresent();
+        ApiResponses apiResponse = ApiResponses.OK;
+        return ApiResponse.<Boolean>builder()
+                .status(apiResponse.getHttpStatus())
+                .message(apiResponse.getMessage())
+                .payload(userExists)
+                .build();
     }
     public User findByUserId(String userId) {
         return userRepository.findByUserId(userId).orElse(null);
