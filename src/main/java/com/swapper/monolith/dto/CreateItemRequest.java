@@ -1,8 +1,8 @@
 package com.swapper.monolith.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.swapper.monolith.TradeService.dto.enums.Condition;
-import com.swapper.monolith.TradeService.dto.enums.Console;
+import com.swapper.monolith.ItemService.constants.Condition;
+import com.swapper.monolith.ItemService.constants.Console;
 import jakarta.validation.constraints.NotNull;
 
 import java.util.List;

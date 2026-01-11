@@ -1,13 +1,16 @@
 package com.swapper.monolith.ItemService.entity;
 
+import com.swapper.monolith.ItemService.constants.Condition;
+import com.swapper.monolith.ItemService.constants.Console;
 import com.swapper.monolith.ItemService.constants.ItemStatus;
-import com.swapper.monolith.TradeService.dto.enums.Condition;
-import com.swapper.monolith.TradeService.dto.enums.Console;
 import com.swapper.monolith.model.User;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Data;
+import lombok.Setter;
 import lombok.experimental.FieldDefaults;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.math.BigDecimal;
 import java.util.Date;
@@ -20,6 +23,7 @@ public class GameEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name="game_id")
+    @Setter(AccessLevel.NONE)
     String gameId;
 
     @Column
@@ -47,7 +51,11 @@ public class GameEntity {
     User owner;
 
     @Column(updatable = false,name="created_at")
+    @CreationTimestamp
+    @Setter(AccessLevel.NONE)
     Date createdAt;
+
     @Column(name="updated_at")
+    @UpdateTimestamp
     Date updatedAt;
 }

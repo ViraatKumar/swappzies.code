@@ -1,8 +1,5 @@
-package com.swapper.monolith.TradeService.dto.enums;
+package com.swapper.monolith.ItemService.constants;
 
-import lombok.Getter;
-
-@Getter
 public enum Console {
     // PlayStation
     PS5,

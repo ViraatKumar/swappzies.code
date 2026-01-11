@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
     @ExceptionHandler({Exception.class})
     public ResponseEntity<?> handleException(Exception e, HttpServletRequest request){
          LoggerFactory.getLogger(GlobalExceptionHandler.class).error("Exception caught in GlobalExceptionHandler - "+e.getMessage());

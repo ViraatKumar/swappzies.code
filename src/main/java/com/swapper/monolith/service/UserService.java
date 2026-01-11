@@ -6,6 +6,7 @@ import com.swapper.monolith.dto.UserDTO;
 import com.swapper.monolith.dto.enums.Role;
 import com.swapper.monolith.exception.CustomExceptions.DuplicatedResourceException;
 import com.swapper.monolith.exception.CustomExceptions.InternalServerException;
+import com.swapper.monolith.exception.ResourceNotFoundException;
 import com.swapper.monolith.exception.enums.ApiResponses;
 import com.swapper.monolith.model.Roles;
 import com.swapper.monolith.model.User;
@@ -18,6 +19,8 @@ import org.hibernate.Internal;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -49,7 +52,6 @@ public class UserService  {
                 .email(emailSignUpRequest.getEmail())
                 .username(emailSignUpRequest.getUsername())
                 .password(passwordEncoder.encode(emailSignUpRequest.getPassword()))
-                .userId(UUID.randomUUID().toString())
                 .roles(setUserRoles(Set.of(Role.USER)))
                 .phoneNo(null)
                 .build();
@@ -91,7 +93,14 @@ public class UserService  {
                 .payload(userExists)
                 .build();
     }
-    public User findByUserId(String userId) {
-        return userRepository.findByUserId(userId).orElse(null);
+
+    public User findByUserId(String userId){
+        User user = userRepository.findByUserId(userId).orElseThrow(
+                ()-> new UsernameNotFoundException("Username not found - "+userId));
+        if(user == null){
+            throw new ResourceNotFoundException("User not found with user id - " + userId);
+        }
+        return user;
     }
+
 }

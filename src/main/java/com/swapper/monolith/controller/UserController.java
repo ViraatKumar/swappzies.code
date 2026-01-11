@@ -9,7 +9,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/v1/user")
+@RequestMapping("/user/v1")
 @PreAuthorize("hasAuthority('USER')")
 public class UserController {
     private final UserService userService;

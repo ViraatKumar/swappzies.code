@@ -1,6 +1,5 @@
 package com.swapper.monolith.model;
 
-import com.swapper.monolith.ItemService.ItemMapper;
 import jakarta.persistence.EntityListeners;
 import jakarta.persistence.MappedSuperclass;
 import jakarta.persistence.Version;

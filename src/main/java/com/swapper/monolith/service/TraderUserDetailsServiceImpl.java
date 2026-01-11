@@ -22,4 +22,4 @@ public class TraderUserDetailsServiceImpl implements UserDetailsService {
                .orElseThrow(()-> new RuntimeException());
        return TradeUserDetailsImpl.build(user);
     }
-    }
+}

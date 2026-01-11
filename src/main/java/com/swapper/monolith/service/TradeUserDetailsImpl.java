@@ -6,6 +6,7 @@ import lombok.experimental.FieldDefaults;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 
 import java.io.Serial;
 import java.util.Collection;
@@ -16,7 +17,6 @@ import java.util.stream.Collectors;
 public class TradeUserDetailsImpl implements UserDetails {
     @Serial
     long serialVersionUID = 1L;
-    long id;
     String userId;
     String username;
     String password;
@@ -27,16 +27,14 @@ public class TradeUserDetailsImpl implements UserDetails {
                 .map(role -> new SimpleGrantedAuthority(role.getRole().name()))
                 .collect(Collectors.toList());
         return new TradeUserDetailsImpl(
-                user.getId(),
                 user.getUserId(),
                 user.getUsername(),
                 user.getPassword(),
                 roles
         );
     }
-    public TradeUserDetailsImpl(long id, String userId, String username, String password,
+    public TradeUserDetailsImpl(String userId, String username, String password,
                                 Collection<? extends GrantedAuthority> authorities) {
-        this.id = id;
         this.userId = userId;
         this.username = username;
         this.password = password;
@@ -55,5 +53,9 @@ public class TradeUserDetailsImpl implements UserDetails {
     @Override
     public String getUsername() {
         return this.username;
+    }
+
+    public String getUserId(){
+        return this.userId;
     }
 }

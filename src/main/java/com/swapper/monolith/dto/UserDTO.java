@@ -24,7 +24,6 @@ public class UserDTO {
     Set<Roles> role;
     public static  UserDTO from(User user) {
        return UserDTO.builder()
-               .id(user.getId())
                .userId(user.getUserId())
                .username(user.getUsername())
                .email(user.getEmail())

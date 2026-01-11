@@ -6,6 +6,8 @@ spring:
     url: jdbc:postgresql://localhost:7000/trader_stage_db
     username: viraat
     password: batman
+  jackson:
+    property-naming-strategy: SNAKE_CASE
 
   jpa:
     hibernate:
@@ -15,3 +17,9 @@ spring:
 security:
   secret-key: 7391ac4d8b170a4d72e959fc7e53e5c3b5ac60b72030ac5c33f23efa6ba99b22
   expiration: 3600000
+
+twitch-api:
+  client_id: dlo1dlp0wtdqilwfyslfs17f003vkz
+  client_secret: 8hlrgwhjctjjwblqgufl2lvqhq8w9i
+  grant_type: client_credentials
+  access_token_base_url: https://id.twitch.tv/oauth2/token

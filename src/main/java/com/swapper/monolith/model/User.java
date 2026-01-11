@@ -24,9 +24,7 @@ import java.util.Set;
 })
 public class User {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long id;
-
+    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name="user_id",unique = true)
     String userId;
     @JsonIgnore
