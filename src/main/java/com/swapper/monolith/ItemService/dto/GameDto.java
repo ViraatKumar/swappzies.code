@@ -10,7 +10,7 @@ import java.util.UUID;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Data
-public class IgdbGameDto {
+public class GameDto {
 
     private Long id;
     private String name;
@@ -32,34 +32,19 @@ public class IgdbGameDto {
 
     private List<Long> artworks;
     private List<Long> bundles;
-
-    /** DEPRECATED – mapped for backward compatibility */
-    private GameCategory category;
-
     private UUID checksum;
-
-    /** DEPRECATED */
-    private Long collection;
-
     private List<Long> collections;
     private Long cover;
-
     @JsonProperty("created_at")
     private Instant createdAt;
-
     private List<Long> dlcs;
-
     @JsonProperty("expanded_games")
     private List<Long> expandedGames;
-
     private List<Long> expansions;
-
     @JsonProperty("external_games")
     private List<Long> externalGames;
-
     @JsonProperty("first_release_date")
     private Long firstReleaseDate; // Unix timestamp
-
     private List<Long> forks;
     private Long franchise;
     private List<Long> franchises;
@@ -121,9 +106,6 @@ public class IgdbGameDto {
     @JsonProperty("standalone_expansions")
     private List<Long> standaloneExpansions;
 
-    /** DEPRECATED */
-    private GameStatus status;
-
     private List<Long> tags;
     private List<Long> themes;
 
@@ -144,6 +126,4 @@ public class IgdbGameDto {
 
     private List<Long> videos;
     private List<Long> websites;
-
-    // getters & setters (or Lombok @Data)
 }

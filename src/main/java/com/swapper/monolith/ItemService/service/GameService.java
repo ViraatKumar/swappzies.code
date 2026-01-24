@@ -1,101 +1,101 @@
 package com.swapper.monolith.ItemService.service;
 
-import com.swapper.monolith.ItemService.dto.GameDTO;
-import com.swapper.monolith.ItemService.dto.IgdbGameDto;
-import com.swapper.monolith.ItemService.dto.TwitchSearchResponse;
+import com.swapper.monolith.ItemService.dto.GameDto;
+import com.swapper.monolith.ItemService.dto.GameSearchResponse;
 import com.swapper.monolith.ItemService.entity.GameEntity;
-import com.swapper.monolith.ItemService.mapper.GameMapper;
 import com.swapper.monolith.ItemService.repository.GameRepository;
-import com.swapper.monolith.exception.ResourceNotFoundException;
 import com.swapper.monolith.external.twitch.GameApi;
-import com.swapper.monolith.model.User;
-import com.swapper.monolith.service.TradeUserDetailsImpl;
-import com.swapper.monolith.service.UserService;
-import lombok.RequiredArgsConstructor;
+import jakarta.transaction.Transactional;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
+import org.modelmapper.ModelMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Map;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class GameService {
 
-    private final GameRepository gameRepository;
-    private final GameMapper gameMapper;
-    private final UserService userService;
+    @Getter
+    private GameService self;
+    Logger logger = LoggerFactory.getLogger(GameService.class);
     private final GameApi gameApi;
-    @Transactional(readOnly = true)
-    public GameDTO getGameById(String gameId) {
-        return gameRepository.findById(gameId)
-                .map(gameMapper::toDTO)
-                .orElseThrow(() -> new ResourceNotFoundException("Game not found with id: " + gameId));
+    private final GameRepository gameRepository;
+    private final ModelMapper modelMapper;
+
+    public GameService(@Lazy GameService self, GameApi gameApi, GameRepository gameRepository, ModelMapper modelMapper) {
+        this.self = self;
+        this.gameApi = gameApi;
+        this.gameRepository = gameRepository;
+        this.modelMapper = modelMapper;
+    }
+    @Autowired
+    public void setSelf(@Lazy GameService self){
+        this.self = self;
     }
 
-    @Transactional(readOnly = true)
-    public List<GameDTO> getAllGames() {
-        return gameRepository.findAll().stream()
-                .map(gameMapper::toDTO)
-                .collect(Collectors.toList());
-    }
-
-    @Transactional
-    public GameDTO createGame(GameDTO gameDTO) {
-        log.info("Creating new game {}", gameDTO.toString());
-        GameEntity gameEntity = gameMapper.toEntity(gameDTO);
-        if(gameEntity == null)
-            throw new IllegalArgumentException("Invalid game entity");
-
-
-        TradeUserDetailsImpl userDetails = (TradeUserDetailsImpl) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        if(userDetails.getUserId() == null){
-            throw new ResourceNotFoundException("user Details do not have user Id - " + userDetails.getUserId());
+    /*
+    Step 1: Search DB first - if respsonse is weak then search API as well
+    Step 2: Combine the responses by unique ID's and return
+    Step 3: in an async operation - populate DB with ID's it did not have before
+     */
+    public GameSearchResponse getGameByName(String gameName){
+        if(gameName.length()<=3){
+            logger.warn("Game name length should be greater than 3 characters");
+            return new GameSearchResponse(List.of(new GameDto()));
         }
-        User user = userService.findByUserId(userDetails.getUserId());
-        if(user == null){
-            throw new ResourceNotFoundException("User not found with id: " + userDetails.getUserId());
+        logger.debug("Getting Game by Name {}", gameName);
+        List<GameEntity> gameEntities = gameRepository.findGamesOfSimilarName(gameName);
+        GameSearchResponse gameSearchResponse = new GameSearchResponse(gameEntities.stream().map(
+                game->modelMapper.map(game,GameDto.class)).toList());
+        if(isResponseStrong(gameSearchResponse)){
+            return gameSearchResponse;
         }
-        gameEntity.setOwner(user);
+        logger.warn("Weak response from DB - Searching API");
 
-        GameEntity savedGame = gameRepository.save(gameEntity);
+        // if not strong enough then we make call to the IGDB API
+        GameSearchResponse twitchResponse = gameApi.searchByGameName(gameName);
+        logger.info("Game Search Response from API: {}", twitchResponse.getGameDtoList());
 
-        return gameMapper.toDTO(savedGame);
+        // runs async to this request
+        self.populateLocalDBWithIGDBResponse(twitchResponse,gameSearchResponse);
+
+        return twitchResponse;
+
     }
+    private boolean isResponseStrong(GameSearchResponse gameSearchResponse){
+        return gameSearchResponse.getGameDtoList()!=null && gameSearchResponse.getGameDtoList().size()>10;
+    }
+
+    @Async
     @Transactional
-    public GameDTO updateGame(String gameId, GameDTO gameDTO) {
-        GameEntity existingGame = gameRepository.findById(gameId)
-                .orElseThrow(() -> new ResourceNotFoundException("Game not found with id: " + gameId));
+    protected void populateLocalDBWithIGDBResponse(GameSearchResponse apiSearchResponse,GameSearchResponse dbSearchResponse){
 
-        // TODO: Add authorization logic here to ensure the current user owns the game.
+        Map<Long,GameDto> existingGamesInDB = new HashMap<>();
 
-        existingGame.setName(gameDTO.getName());
-        existingGame.setCondition(gameDTO.getCondition());
-        existingGame.setConsole(gameDTO.getConsole());
-        existingGame.setRegion(gameDTO.getRegion());
-        existingGame.setPrice(gameDTO.getPrice());
-        existingGame.setStatus(gameDTO.getStatus());
-        existingGame.setUpdatedAt(new Date());
+        dbSearchResponse.getGameDtoList().forEach(gameDto -> {
+            if(!existingGamesInDB.containsKey(gameDto.getId())){
+                existingGamesInDB.put(gameDto.getId(),gameDto);
+            }
+        });
 
-        GameEntity updatedGame = gameRepository.save(existingGame);
-        return gameMapper.toDTO(updatedGame);
-    }
 
-    @Transactional
-    public void deleteGame(String gameId) {
-        if (!gameRepository.existsById(gameId)) {
-            throw new ResourceNotFoundException("Game not found with id: " + gameId);
-        }
-        // TODO: Add authorization logic here.
-        gameRepository.deleteById(gameId);
-    }
-
-    public TwitchSearchResponse getGameByName(String gameName){
-        return gameApi.searchByGameName(gameName);
+        apiSearchResponse.getGameDtoList().forEach(gameDto -> {
+            if(!existingGamesInDB.containsKey(gameDto.getId())){
+                logger.info("Adding Game to DB {} with id {}", gameDto.getName(),gameDto.getId());
+                existingGamesInDB.put(gameDto.getId(),gameDto);
+                GameEntity gameEntity = modelMapper.map(gameDto,GameEntity.class);
+                gameRepository.save(gameEntity);
+            }
+        });
+        logger.info("Successfully added all new games to DB");
     }
 }

@@ -1,12 +1,10 @@
 package com.swapper.monolith.external.twitch;
 
-import com.swapper.monolith.ItemService.dto.GameDTO;
-import com.swapper.monolith.ItemService.dto.IgdbGameDto;
-import com.swapper.monolith.ItemService.dto.TwitchSearchResponse;
+import com.swapper.monolith.ItemService.dto.GameDto;
+import com.swapper.monolith.ItemService.dto.GameSearchResponse;
 import com.swapper.monolith.external.ExternalApiClient;
 import com.swapper.monolith.external.dto.TokenResponse;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Component;
@@ -63,23 +61,21 @@ public class GameApi {
     /**
      * Example method to search for games.
      */
-    public TwitchSearchResponse searchByGameName(String gameName) {
-        String  searchBody = "fields id, name; search \""+gameName+"\";";
+    public GameSearchResponse searchByGameName(String gameName) {
+        String  searchBody = "fields *; search \""+gameName+"\";";
         String gameUrl = "https://api.igdb.com/v4/games";
         HttpHeaders headers = createHeaders();
         String url = UriComponentsBuilder
                 .fromUriString(gameUrl)
                 .toUriString();
 
-        List<IgdbGameDto> gameDTOList = List.of(client.execute(
+        List<GameDto> gameDTOList = List.of(client.execute(
                 url,
                 HttpMethod.POST,
                 searchBody,
                 headers,
-                IgdbGameDto[].class
+                GameDto[].class
         ));
-        TwitchSearchResponse twitchSearchResponse = new TwitchSearchResponse();
-        twitchSearchResponse.setGameDTOList(gameDTOList);
-        return twitchSearchResponse;
+        return new GameSearchResponse(gameDTOList);
     }
 }

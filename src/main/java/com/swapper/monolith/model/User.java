@@ -1,15 +1,11 @@
 package com.swapper.monolith.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.swapper.monolith.dto.UserDTO;
-import com.swapper.monolith.dto.enums.Role;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.util.HashSet;
 import java.util.Set;
 
 @Data
