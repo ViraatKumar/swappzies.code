@@ -59,10 +59,10 @@ public class GameDto {
     private List<Long> gameModes;
 
     @JsonProperty("game_status")
-    private GameStatus gameStatus;
+    private String gameStatus;
 
     @JsonProperty("game_type")
-    private GameCategory gameType;
+    private String gameType;
 
     private List<Long> genres;
     private Integer hypes;

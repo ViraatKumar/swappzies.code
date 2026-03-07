@@ -13,12 +13,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -30,9 +32,8 @@ public class GameService {
     private final GameApi gameApi;
     private final GameRepository gameRepository;
     private final ModelMapper modelMapper;
-
-    public GameService(@Lazy GameService self, GameApi gameApi, GameRepository gameRepository, ModelMapper modelMapper) {
-        this.self = self;
+    private final int DB_RESULT_STRENGTH =10;
+    public GameService(GameApi gameApi, GameRepository gameRepository, ModelMapper modelMapper) {
         this.gameApi = gameApi;
         this.gameRepository = gameRepository;
         this.modelMapper = modelMapper;
@@ -53,7 +54,8 @@ public class GameService {
             return new GameSearchResponse(List.of(new GameDto()));
         }
         logger.debug("Getting Game by Name {}", gameName);
-        List<GameEntity> gameEntities = gameRepository.findGamesOfSimilarName(gameName);
+        Pageable pageable = PageRequest.of(0, 10);
+        Page<GameEntity> gameEntities = gameRepository.findGamesOfSimilarName(gameName,pageable);
         GameSearchResponse gameSearchResponse = new GameSearchResponse(gameEntities.stream().map(
                 game->modelMapper.map(game,GameDto.class)).toList());
         if(isResponseStrong(gameSearchResponse)){
@@ -66,36 +68,40 @@ public class GameService {
         logger.info("Game Search Response from API: {}", twitchResponse.getGameDtoList());
 
         // runs async to this request
-        self.populateLocalDBWithIGDBResponse(twitchResponse,gameSearchResponse);
+        self.populateDBWithMissingValues(twitchResponse);
 
         return twitchResponse;
 
     }
     private boolean isResponseStrong(GameSearchResponse gameSearchResponse){
-        return gameSearchResponse.getGameDtoList()!=null && gameSearchResponse.getGameDtoList().size()>10;
+        return gameSearchResponse.getGameDtoList()!=null && gameSearchResponse.getGameDtoList().size()>DB_RESULT_STRENGTH;
     }
 
+    /**
+     * Search the DB with the id's that we recieved from the IGDB API
+     * Push
+     * @param apiSearchResponse contains API Search Response from the IGDB API and populates using these games into the service DB if these games are missing
+     */
     @Async
     @Transactional
-    protected void populateLocalDBWithIGDBResponse(GameSearchResponse apiSearchResponse,GameSearchResponse dbSearchResponse){
+    public void populateDBWithMissingValues(GameSearchResponse apiSearchResponse){
+        List<GameDto> apiGameDtos = apiSearchResponse.getGameDtoList();
+        if(apiGameDtos == null || apiGameDtos.isEmpty()) return;
 
-        Map<Long,GameDto> existingGamesInDB = new HashMap<>();
-
-        dbSearchResponse.getGameDtoList().forEach(gameDto -> {
-            if(!existingGamesInDB.containsKey(gameDto.getId())){
-                existingGamesInDB.put(gameDto.getId(),gameDto);
+        Map<Long,GameDto> apiGames = new HashMap<>();
+        apiGameDtos.forEach(gameDto -> {
+            if(!apiGames.containsKey(gameDto.getId())){
+                apiGames.put(gameDto.getId(),gameDto);
             }
         });
-
-
-        apiSearchResponse.getGameDtoList().forEach(gameDto -> {
-            if(!existingGamesInDB.containsKey(gameDto.getId())){
-                logger.info("Adding Game to DB {} with id {}", gameDto.getName(),gameDto.getId());
-                existingGamesInDB.put(gameDto.getId(),gameDto);
-                GameEntity gameEntity = modelMapper.map(gameDto,GameEntity.class);
-                gameRepository.save(gameEntity);
+        Set<Long> apiGameIds = apiGameDtos.stream().map(GameDto::getId).collect(Collectors.toSet());
+        Set<Long> dbGameEntities = new HashSet<>(gameRepository.findIdsByIdLn(apiGameIds));
+        List<GameEntity> newGames =  new ArrayList<>();
+        apiGames.keySet().forEach(gameId -> {
+            if(!dbGameEntities.contains(gameId)){
+                newGames.add(modelMapper.map(apiGames.get(gameId),GameEntity.class));
             }
         });
-        logger.info("Successfully added all new games to DB");
+        gameRepository.saveAll(newGames);
     }
 }

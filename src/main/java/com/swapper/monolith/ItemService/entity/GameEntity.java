@@ -114,13 +114,11 @@ public class GameEntity {
     @Column(name = "game_modes", columnDefinition = "jsonb")
     private List<Long> gameModes;
 
-    @Enumerated(EnumType.STRING) // Added for safety if it's an enum
     @Column(name = "game_status")
-    private GameStatus gameStatus;
+    private String gameStatus;
 
-    @Enumerated(EnumType.STRING)
     @JsonProperty("game_type")
-    private GameCategory gameType;
+    private String gameType;
 
     @Type(JsonBinaryType.class)
     @Column(name = "genres", columnDefinition = "jsonb")
