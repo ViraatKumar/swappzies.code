@@ -8,7 +8,9 @@ import com.swapper.monolith.security.utils.JwtUtil;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
@@ -30,11 +32,11 @@ public class AuthService {
                         loginRequest.getUsername(),
                         loginRequest.getPassword())
         );
-        if(authentication.isAuthenticated()) {
-            String token = jwtUtil.generateToken(new HashMap<>(),loginRequest.getUsername());
-            return new LoginResponse(token);
+        if(!authentication.isAuthenticated()){
+            throw new BadCredentialsException("Invalid username or password");
         }
-        return new LoginResponse("Invalid username or password");
+        String token = jwtUtil.generateToken(new HashMap<>(),loginRequest.getUsername());
+        return new LoginResponse(token);
     }
 
     public String register(@RequestBody EmailSignUpRequest emailSignUpRequest) {

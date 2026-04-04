@@ -17,6 +17,10 @@ spring:
 security:
   secret-key: 7391ac4d8b170a4d72e959fc7e53e5c3b5ac60b72030ac5c33f23efa6ba99b22
   expiration: 3600000
+  cors:
+    allowed-origins:
+      - http://localhost:3000
+      - http://localhost:5173
 
 twitch-api:
   client_id: dlo1dlp0wtdqilwfyslfs17f003vkz

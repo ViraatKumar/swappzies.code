@@ -3,12 +3,12 @@ package com.swapper.monolith.ItemService.service;
 import com.swapper.monolith.ItemService.dto.GameDto;
 import com.swapper.monolith.ItemService.dto.GameSearchResponse;
 import com.swapper.monolith.ItemService.entity.GameEntity;
+import com.swapper.monolith.ItemService.mapper.GameMapper;
 import com.swapper.monolith.ItemService.repository.GameRepository;
 import com.swapper.monolith.external.twitch.GameApi;
 import jakarta.transaction.Transactional;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,12 +31,13 @@ public class GameService {
     Logger logger = LoggerFactory.getLogger(GameService.class);
     private final GameApi gameApi;
     private final GameRepository gameRepository;
-    private final ModelMapper modelMapper;
-    private final int DB_RESULT_STRENGTH =10;
-    public GameService(GameApi gameApi, GameRepository gameRepository, ModelMapper modelMapper) {
+    private final GameMapper gameMapper;
+    private final int DB_RESULT_STRENGTH = 10;
+
+    public GameService(GameApi gameApi, GameRepository gameRepository, GameMapper gameMapper) {
         this.gameApi = gameApi;
         this.gameRepository = gameRepository;
-        this.modelMapper = modelMapper;
+        this.gameMapper = gameMapper;
     }
     @Autowired
     public void setSelf(@Lazy GameService self){
@@ -49,15 +50,10 @@ public class GameService {
     Step 3: in an async operation - populate DB with ID's it did not have before
      */
     public GameSearchResponse getGameByName(String gameName){
-        if(gameName.length()<=3){
-            logger.warn("Game name length should be greater than 3 characters");
-            return new GameSearchResponse(List.of(new GameDto()));
-        }
         logger.debug("Getting Game by Name {}", gameName);
         Pageable pageable = PageRequest.of(0, 10);
         Page<GameEntity> gameEntities = gameRepository.findGamesOfSimilarName(gameName,pageable);
-        GameSearchResponse gameSearchResponse = new GameSearchResponse(gameEntities.stream().map(
-                game->modelMapper.map(game,GameDto.class)).toList());
+        GameSearchResponse gameSearchResponse = new GameSearchResponse(gameEntities.stream().map(gameMapper::toDto).toList());
         if(isResponseStrong(gameSearchResponse)){
             return gameSearchResponse;
         }
@@ -74,7 +70,7 @@ public class GameService {
 
     }
     private boolean isResponseStrong(GameSearchResponse gameSearchResponse){
-        return gameSearchResponse.getGameDtoList()!=null && gameSearchResponse.getGameDtoList().size()>DB_RESULT_STRENGTH;
+        return gameSearchResponse.getGameDtoList()!=null && gameSearchResponse.getGameDtoList().size()>=DB_RESULT_STRENGTH;
     }
 
     /**
@@ -99,7 +95,7 @@ public class GameService {
         List<GameEntity> newGames =  new ArrayList<>();
         apiGames.keySet().forEach(gameId -> {
             if(!dbGameEntities.contains(gameId)){
-                newGames.add(modelMapper.map(apiGames.get(gameId),GameEntity.class));
+                newGames.add(gameMapper.toEntity(apiGames.get(gameId)));
             }
         });
         gameRepository.saveAll(newGames);

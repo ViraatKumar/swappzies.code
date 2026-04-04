@@ -19,7 +19,7 @@ public record TokenResponse(
     }
 
     public boolean isExpired() {
-        if (createdAt == null) return true;
+        if (this.createdAt == null) return true;
         long expirationTimeInMillis = createdAt.getTime() + (expiresIn * 1000);
         // Add a buffer of 60 seconds to be safe
         return System.currentTimeMillis() > (expirationTimeInMillis - 60000);

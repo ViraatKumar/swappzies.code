@@ -6,6 +6,8 @@ import lombok.experimental.FieldDefaults;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
+
 @Data
 @Component
 @ConfigurationProperties(prefix = "security")
@@ -13,4 +15,10 @@ import org.springframework.stereotype.Component;
 public class SecurityConfiguration {
     String secretKey;
     long expiration;
+    Cors cors = new Cors();
+
+    @Data
+    public static class Cors {
+        List<String> allowedOrigins = List.of();
+    }
 }

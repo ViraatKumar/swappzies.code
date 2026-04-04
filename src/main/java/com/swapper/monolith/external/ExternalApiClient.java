@@ -36,13 +36,18 @@ public class ExternalApiClient {
 
         HttpEntity<REQ> requestEntity = new HttpEntity<>(requestBody, httpHeaders);
 
-        ResponseEntity<RES> response = restTemplate.exchange(
-                url,
-                method,
-                requestEntity,
-                responseType
-        );
+        try {
+            ResponseEntity<RES> response = restTemplate.exchange(
+                    url,
+                    method,
+                    requestEntity,
+                    responseType
+            );
 
-        return response.getBody();
+            return response.getBody();
+        }
+        catch(Exception ex){
+            throw new RuntimeException(ex);
+        }
     }
 }
