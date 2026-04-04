@@ -4,6 +4,7 @@ import com.swapper.monolith.dto.ApiResponse;
 import com.swapper.monolith.dto.EmailSignUpRequest;
 import com.swapper.monolith.dto.LoginRequest;
 import com.swapper.monolith.dto.LoginResponse;
+import com.swapper.monolith.dto.RefreshTokenRequest;
 import com.swapper.monolith.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.AccessLevel;
@@ -27,6 +28,17 @@ public class AuthController {
     @PostMapping("/user-register")
     public ResponseEntity<String> userRegister(@Valid @RequestBody EmailSignUpRequest emailSignUpRequest) {
         return ResponseEntity.ok(authService.register(emailSignUpRequest));
+    }
+
+    @PostMapping("/refresh-token")
+    public ResponseEntity<LoginResponse> refreshToken(@Valid @RequestBody RefreshTokenRequest request) {
+        return ResponseEntity.ok(authService.refresh(request));
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(@Valid @RequestBody RefreshTokenRequest request) {
+        authService.logout(request);
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/username-exists")

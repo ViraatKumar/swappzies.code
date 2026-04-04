@@ -12,6 +12,8 @@ public enum ApiResponses {
     RESOURCE_NOT_FOUND(HttpStatus.NOT_FOUND, "Resource Not Found"),
     CREATED(HttpStatus.CREATED, "Created Successfully"),
     OK(HttpStatus.OK, "Retrieved Successfully"),
+    REFRESH_TOKEN_EXPIRED(HttpStatus.UNAUTHORIZED, "Refresh token has expired, please log in again"),
+    REFRESH_TOKEN_INVALID(HttpStatus.UNAUTHORIZED, "Invalid refresh token"),
     ;
     HttpStatus httpStatus;
     String message;

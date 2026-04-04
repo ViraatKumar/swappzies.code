@@ -2,6 +2,7 @@ package com.swapper.monolith.exception;
 
 import com.swapper.monolith.dto.ErrorResponse;
 import com.swapper.monolith.exception.CustomExceptions.DuplicatedResourceException;
+import com.swapper.monolith.exception.CustomExceptions.TokenExpiredException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
@@ -49,6 +50,16 @@ public class GlobalExceptionHandler {
                 .path(request.getServletPath())
                 .build());
     }
+    @ExceptionHandler(TokenExpiredException.class)
+    public ResponseEntity<?> tokenExpiredException(TokenExpiredException e, HttpServletRequest request) {
+        LOGGER.error(exceptionString, e.getMessage());
+        return ResponseEntity.status(e.getHttpStatus()).body(ErrorResponse.errorBuilder()
+                .message(e.getMessage())
+                .status(e.getHttpStatus())
+                .path(request.getServletPath())
+                .build());
+    }
+
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<?> badCredentialsException(BadCredentialsException e, HttpServletRequest request){
         LOGGER.error(exceptionString,e.getMessage());

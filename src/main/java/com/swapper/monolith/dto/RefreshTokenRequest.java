@@ -1,11 +1,10 @@
 package com.swapper.monolith.dto;
 
-import lombok.Builder;
+import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 @Data
-@Builder
-public class LoginResponse {
-    private String jwtToken;
+public class RefreshTokenRequest {
+    @NotBlank
     private String refreshToken;
 }
