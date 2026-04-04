@@ -15,13 +15,6 @@ import java.time.Instant;
 @AllArgsConstructor
 @Table(name = "refresh_token")
 public class RefreshToken {
-
-    // creates the refreshed token with raw token rather than the hash value
-    public RefreshToken(RefreshToken refreshToken,String rawToken){
-
-        this.setToken(rawToken);
-    }
-
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     String id;
