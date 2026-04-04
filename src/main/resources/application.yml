@@ -16,7 +16,8 @@ spring:
 
 security:
   secret-key: 7391ac4d8b170a4d72e959fc7e53e5c3b5ac60b72030ac5c33f23efa6ba99b22
-  expiration: 3600000
+  expiration: 900000
+  refresh-token-expiration: 604800000
   cors:
     allowed-origins:
       - http://localhost:3000

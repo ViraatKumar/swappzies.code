@@ -15,6 +15,7 @@ import java.util.List;
 public class SecurityConfiguration {
     String secretKey;
     long expiration;
+    long refreshTokenExpiration;
     Cors cors = new Cors();
 
     @Data

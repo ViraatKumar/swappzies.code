@@ -1,14 +1,18 @@
 package com.swapper.monolith.service;
 
+import com.swapper.monolith.ItemService.dto.RefreshTokenResponse;
 import com.swapper.monolith.dto.ApiResponse;
 import com.swapper.monolith.dto.EmailSignUpRequest;
 import com.swapper.monolith.dto.LoginRequest;
 import com.swapper.monolith.dto.LoginResponse;
+import com.swapper.monolith.dto.RefreshTokenRequest;
+import com.swapper.monolith.exception.enums.ApiResponses;
+import com.swapper.monolith.model.RefreshToken;
+import com.swapper.monolith.model.User;
 import com.swapper.monolith.security.utils.JwtUtil;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -25,6 +29,7 @@ public class AuthService {
     AuthenticationManager authenticationManager;
     JwtUtil jwtUtil;
     UserService userService;
+    RefreshTokenService refreshTokenService;
 
     public LoginResponse login(LoginRequest loginRequest) {
         Authentication authentication = authenticationManager.authenticate(
@@ -32,18 +37,41 @@ public class AuthService {
                         loginRequest.getUsername(),
                         loginRequest.getPassword())
         );
-        if(!authentication.isAuthenticated()){
+        if (!authentication.isAuthenticated()) {
             throw new BadCredentialsException("Invalid username or password");
         }
-        String token = jwtUtil.generateToken(new HashMap<>(),loginRequest.getUsername());
-        return new LoginResponse(token);
+        String accessToken = jwtUtil.generateToken(new HashMap<>(), loginRequest.getUsername());
+        User user = userService.findByUsername(loginRequest.getUsername());
+        RefreshTokenResponse refreshTokenResponse = refreshTokenService.createRefreshToken(user);
+        return LoginResponse.builder()
+                .jwtToken(accessToken)
+                .refreshToken(refreshTokenResponse.getRefreshToken())
+                .build();
+    }
+
+    public LoginResponse refresh(RefreshTokenRequest request) {
+        RefreshToken refreshToken = refreshTokenService.findByToken(request.getRefreshToken())
+                .orElseThrow(() -> new BadCredentialsException(ApiResponses.REFRESH_TOKEN_INVALID.getMessage()));
+        refreshTokenService.verifyExpiration(refreshToken);
+        RefreshTokenResponse newRefreshTokenResponse = refreshTokenService.rotateToken(refreshToken);
+        String accessToken = jwtUtil.generateToken(new HashMap<>(), newRefreshTokenResponse.getUser().getUsername());
+        return LoginResponse.builder()
+                .jwtToken(accessToken)
+                .refreshToken(newRefreshTokenResponse.getRefreshToken())
+                .build();
+    }
+
+    public void logout(RefreshTokenRequest request) {
+        RefreshToken refreshToken = refreshTokenService.findByToken(request.getRefreshToken())
+                .orElseThrow(() -> new BadCredentialsException(ApiResponses.REFRESH_TOKEN_INVALID.getMessage()));
+        refreshTokenService.deleteByUser(refreshToken.getUser());
     }
 
     public String register(@RequestBody EmailSignUpRequest emailSignUpRequest) {
         return userService.addUser(emailSignUpRequest);
     }
 
-    public ApiResponse<Boolean> checkUsername(String username){
+    public ApiResponse<Boolean> checkUsername(String username) {
         return userService.checkUsername(username);
     }
 }
