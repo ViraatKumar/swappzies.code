@@ -1,11 +1,11 @@
 package com.swapper.monolith.service;
 
+import com.swapper.monolith.ItemService.dto.RefreshTokenResponse;
 import com.swapper.monolith.dto.ApiResponse;
 import com.swapper.monolith.dto.EmailSignUpRequest;
 import com.swapper.monolith.dto.LoginRequest;
 import com.swapper.monolith.dto.LoginResponse;
 import com.swapper.monolith.dto.RefreshTokenRequest;
-import com.swapper.monolith.exception.CustomExceptions.TokenExpiredException;
 import com.swapper.monolith.exception.enums.ApiResponses;
 import com.swapper.monolith.model.RefreshToken;
 import com.swapper.monolith.model.User;
@@ -42,10 +42,10 @@ public class AuthService {
         }
         String accessToken = jwtUtil.generateToken(new HashMap<>(), loginRequest.getUsername());
         User user = userService.findByUsername(loginRequest.getUsername());
-        RefreshToken refreshToken = refreshTokenService.createRefreshToken(user);
+        RefreshTokenResponse refreshTokenResponse = refreshTokenService.createRefreshToken(user);
         return LoginResponse.builder()
                 .jwtToken(accessToken)
-                .refreshToken(refreshToken.getToken())
+                .refreshToken(refreshTokenResponse.getRefreshToken())
                 .build();
     }
 
@@ -53,11 +53,11 @@ public class AuthService {
         RefreshToken refreshToken = refreshTokenService.findByToken(request.getRefreshToken())
                 .orElseThrow(() -> new BadCredentialsException(ApiResponses.REFRESH_TOKEN_INVALID.getMessage()));
         refreshTokenService.verifyExpiration(refreshToken);
-        RefreshToken newRefreshToken = refreshTokenService.rotateToken(refreshToken);
-        String accessToken = jwtUtil.generateToken(new HashMap<>(), newRefreshToken.getUser().getUsername());
+        RefreshTokenResponse newRefreshTokenResponse = refreshTokenService.rotateToken(refreshToken);
+        String accessToken = jwtUtil.generateToken(new HashMap<>(), newRefreshTokenResponse.getUser().getUsername());
         return LoginResponse.builder()
                 .jwtToken(accessToken)
-                .refreshToken(newRefreshToken.getToken())
+                .refreshToken(newRefreshTokenResponse.getRefreshToken())
                 .build();
     }
 

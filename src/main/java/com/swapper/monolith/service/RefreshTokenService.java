@@ -1,5 +1,6 @@
 package com.swapper.monolith.service;
 
+import com.swapper.monolith.ItemService.dto.RefreshTokenResponse;
 import com.swapper.monolith.exception.CustomExceptions.TokenExpiredException;
 import com.swapper.monolith.exception.enums.ApiResponses;
 import com.swapper.monolith.model.RefreshToken;
@@ -12,7 +13,12 @@ import lombok.experimental.FieldDefaults;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.sql.Ref;
 import java.time.Instant;
+import java.util.HexFormat;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -23,16 +29,23 @@ public class RefreshTokenService {
 
     RefreshTokenRepository refreshTokenRepository;
     SecurityConfiguration securityConfiguration;
+    static final String HASH_ALGORITHM = "SHA-256";
 
     @Transactional
-    public RefreshToken createRefreshToken(User user) {
+    public RefreshTokenResponse createRefreshToken(User user) {
+        String rawToken = UUID.randomUUID().toString();
         RefreshToken refreshToken = RefreshToken.builder()
-                .token(UUID.randomUUID().toString())
+                .token(hash(rawToken))
                 .user(user)
                 .expiryDate(Instant.now().plusMillis(securityConfiguration.getRefreshTokenExpiration()))
                 .createdAt(Instant.now())
                 .build();
-        return refreshTokenRepository.save(refreshToken);
+        refreshTokenRepository.save(refreshToken);
+        return new RefreshTokenResponse(user,rawToken
+        );
+    }
+    public Optional<RefreshToken> findByToken(String token){
+        return refreshTokenRepository.findByToken(hash(token));
     }
 
     public RefreshToken verifyExpiration(RefreshToken token) {
@@ -44,7 +57,7 @@ public class RefreshTokenService {
     }
 
     @Transactional
-    public RefreshToken rotateToken(RefreshToken oldToken) {
+    public RefreshTokenResponse rotateToken(RefreshToken oldToken) {
         refreshTokenRepository.delete(oldToken);
         return createRefreshToken(oldToken.getUser());
     }
@@ -54,7 +67,13 @@ public class RefreshTokenService {
         refreshTokenRepository.deleteByUser(user);
     }
 
-    public Optional<RefreshToken> findByToken(String token) {
-        return refreshTokenRepository.findByToken(token);
+    private String hash(String token){
+        try{
+            MessageDigest md = MessageDigest.getInstance(HASH_ALGORITHM);
+            byte[] bytes = md.digest(token.getBytes(StandardCharsets.UTF_8));
+            return HexFormat.of().formatHex(bytes);
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(HASH_ALGORITHM + "Not available" + e);
+        }
     }
 }
