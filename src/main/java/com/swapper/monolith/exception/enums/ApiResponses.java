@@ -14,6 +14,8 @@ public enum ApiResponses {
     OK(HttpStatus.OK, "Retrieved Successfully"),
     REFRESH_TOKEN_EXPIRED(HttpStatus.UNAUTHORIZED, "Refresh token has expired, please log in again"),
     REFRESH_TOKEN_INVALID(HttpStatus.UNAUTHORIZED, "Invalid refresh token"),
+    PASSWORD_RESET_TOKEN_EXPIRED(HttpStatus.UNAUTHORIZED, "Password reset link has expired, please request a new one"),
+    PASSWORD_RESET_TOKEN_INVALID(HttpStatus.UNAUTHORIZED, "Invalid password reset token"),
     ;
     HttpStatus httpStatus;
     String message;

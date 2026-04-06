@@ -4,8 +4,8 @@ server:
 spring:
   datasource:
     url: jdbc:postgresql://localhost:7000/trader_stage_db
-    username: viraat
-    password: batman
+    username: ${username_db}
+    password: ${password_db}
   jackson:
     property-naming-strategy: SNAKE_CASE
 
@@ -14,17 +14,30 @@ spring:
       ddl-auto: update
     show-sql: true
 
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${username_mail}
+    password: ${username_password}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
 security:
-  secret-key: 7391ac4d8b170a4d72e959fc7e53e5c3b5ac60b72030ac5c33f23efa6ba99b22
+  secret-key: ${secret_key}
   expiration: 900000
   refresh-token-expiration: 604800000
+  password-reset-token-expiration: 900000
   cors:
     allowed-origins:
       - http://localhost:3000
       - http://localhost:5173
 
 twitch-api:
-  client_id: dlo1dlp0wtdqilwfyslfs17f003vkz
-  client_secret: 8hlrgwhjctjjwblqgufl2lvqhq8w9i
+  client_id: ${twitch_client_id}
+  client_secret: ${twitch_client_secret}
   grant_type: client_credentials
   access_token_base_url: https://id.twitch.tv/oauth2/token

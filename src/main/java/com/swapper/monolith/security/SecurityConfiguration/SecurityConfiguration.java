@@ -16,6 +16,7 @@ public class SecurityConfiguration {
     String secretKey;
     long expiration;
     long refreshTokenExpiration;
+    long passwordResetTokenExpiration;
     Cors cors = new Cors();
 
     @Data
