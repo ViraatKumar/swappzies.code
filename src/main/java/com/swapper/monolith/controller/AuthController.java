@@ -2,14 +2,17 @@ package com.swapper.monolith.controller;
 
 import com.swapper.monolith.dto.ApiResponse;
 import com.swapper.monolith.dto.EmailSignUpRequest;
+import com.swapper.monolith.dto.ForgotPasswordRequest;
 import com.swapper.monolith.dto.LoginRequest;
 import com.swapper.monolith.dto.LoginResponse;
 import com.swapper.monolith.dto.RefreshTokenRequest;
+import com.swapper.monolith.dto.ResetPasswordRequest;
 import com.swapper.monolith.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
@@ -20,6 +23,7 @@ import org.springframework.web.bind.annotation.*;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class AuthController {
     AuthService authService;
+
     @PostMapping("/user-login")
     public ResponseEntity<LoginResponse> userLogin(@Valid @RequestBody LoginRequest loginRequest) {
         return ResponseEntity.ok(authService.login(loginRequest));
@@ -42,8 +46,26 @@ public class AuthController {
     }
 
     @GetMapping("/username-exists")
-    public ResponseEntity<ApiResponse<Boolean>> checkUsername(@RequestParam("username") String username){
+    public ResponseEntity<ApiResponse<Boolean>> checkUsername(@RequestParam("username") String username) {
         ApiResponse<Boolean> response = authService.checkUsername(username);
         return ResponseEntity.status(response.status()).body(response);
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<ApiResponse<Void>> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        authService.forgotPassword(request);
+        return ResponseEntity.ok(ApiResponse.<Void>builder()
+                .status(HttpStatus.OK)
+                .message("If this email is registered, a reset link has been sent")
+                .build());
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<ApiResponse<Void>> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        authService.resetPassword(request);
+        return ResponseEntity.ok(ApiResponse.<Void>builder()
+                .status(HttpStatus.OK)
+                .message("Password reset successfully")
+                .build());
     }
 }

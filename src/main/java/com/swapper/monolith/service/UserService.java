@@ -108,4 +108,8 @@ public class UserService  {
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
     }
 
+    public java.util.Optional<User> findByEmail(String email) {
+        return userRepository.findByEmail(email);
+    }
+
 }
