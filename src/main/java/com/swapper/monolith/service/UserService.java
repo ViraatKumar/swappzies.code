@@ -3,6 +3,7 @@ package com.swapper.monolith.service;
 import com.swapper.monolith.dto.ApiResponse;
 import com.swapper.monolith.dto.EmailSignUpRequest;
 import com.swapper.monolith.dto.UserDTO;
+import com.swapper.monolith.dto.UserDetailsResponse;
 import com.swapper.monolith.dto.enums.Role;
 import com.swapper.monolith.exception.CustomExceptions.DuplicatedResourceException;
 import com.swapper.monolith.exception.CustomExceptions.InternalServerException;
@@ -58,12 +59,12 @@ public class UserService  {
         userRepository.save(newUser);
         return "User Added Successfully";
     }
-    public UserDTO getUser(UserDetails userDetails){
+    public UserDetailsResponse getUser(UserDetails userDetails){
         User user = userRepository.findByUsername(userDetails.getUsername()).orElseThrow(()-> new UsernameNotFoundException("Username not found - "+userDetails.getUsername()));
         if(user == null){
             throw new UsernameNotFoundException("User not found");
         }
-        return UserDTO.from(user);
+        return UserDetailsResponse.from(user);
     }
     private Set<Roles> setUserRoles(Set<Role> requestedRoles) {
         Set<Roles> userRoles = new HashSet<>();

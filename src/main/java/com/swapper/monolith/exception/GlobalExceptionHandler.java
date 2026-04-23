@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.InsufficientAuthenticationException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -68,5 +69,13 @@ public class GlobalExceptionHandler {
                         .status(HttpStatus.UNAUTHORIZED)
                         .path(request.getServletPath())
                 .build());
+    }
+    @ExceptionHandler(InsufficientAuthenticationException.class)
+    public ResponseEntity<?> insufficientAuthenticationException(InsufficientAuthenticationException e, HttpServletRequest request){
+        LOGGER.error(exceptionString,e.getMessage());
+        return ResponseEntity.status(403).body(ErrorResponse.errorBuilder()
+                .message(e.getMessage())
+        .status(HttpStatus.UNAUTHORIZED)
+                .path(request.getServletPath()));
     }
 }

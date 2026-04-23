@@ -1,14 +1,19 @@
 package com.swapper.monolith.ItemService.service;
 
+import com.swapper.monolith.ItemService.dto.CreateListingRequest;
 import com.swapper.monolith.ItemService.dto.GameDto;
+import com.swapper.monolith.ItemService.dto.GameFilterRequest;
 import com.swapper.monolith.ItemService.dto.GameSearchResponse;
+import com.swapper.monolith.ItemService.specification.GameSpecification;
 import com.swapper.monolith.ItemService.entity.GameEntity;
 import com.swapper.monolith.ItemService.mapper.GameMapper;
 import com.swapper.monolith.ItemService.repository.GameRepository;
+import com.swapper.monolith.dto.ApiResponse;
 import com.swapper.monolith.external.twitch.GameApi;
 import jakarta.transaction.Transactional;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.query.SortDirection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,7 +21,11 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Async;
+import org.springframework.security.authentication.InsufficientAuthenticationException;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -67,6 +76,30 @@ public class GameService {
         self.populateDBWithMissingValues(twitchResponse);
 
         return twitchResponse;
+
+    }
+
+    public Page<GameDto> filterGames(GameFilterRequest filter) {
+        if(SecurityContextHolder.getContext().getAuthentication() == null) {
+            throw new InsufficientAuthenticationException("Cannot View games without Authentication");
+        }
+        Pageable pageable = PageRequest.of(0, 10);
+        Sort sortingOrder = Sort.by(Sort.Direction.DESC,"firstReleaseDate");
+        if(filter.getSortDirection() != null && filter.getSortKey()!=null) {
+            Sort.Direction direction = Sort.Direction.ASC.name().equalsIgnoreCase(filter.getSortDirection()) ? Sort.Direction.ASC : Sort.Direction.DESC;
+            sortingOrder = Sort.by(direction, filter.getSortKey());
+        }
+        PageRequest pageRequest = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(),sortingOrder);
+        return gameRepository.findAll(GameSpecification.fromFilter(filter), pageRequest)
+                    .map(gameMapper::toDto);
+
+    }
+//    private validateSortKey(String sortKey){
+//
+//    }
+
+    public void createListing(CreateListingRequest createListingRequest){
+
 
     }
     private boolean isResponseStrong(GameSearchResponse gameSearchResponse){

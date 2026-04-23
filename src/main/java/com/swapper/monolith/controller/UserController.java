@@ -1,6 +1,7 @@
 package com.swapper.monolith.controller;
 
 import com.swapper.monolith.dto.UserDTO;
+import com.swapper.monolith.dto.UserDetailsResponse;
 import com.swapper.monolith.service.UserService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -19,7 +20,7 @@ public class UserController {
     }
 
     @GetMapping("/user-details")
-    public ResponseEntity<UserDTO> getUserDetails(Authentication authentication) {
+    public ResponseEntity<UserDetailsResponse> getUserDetails(Authentication authentication) {
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
        return ResponseEntity.ok(userService.getUser(userDetails));
     }
