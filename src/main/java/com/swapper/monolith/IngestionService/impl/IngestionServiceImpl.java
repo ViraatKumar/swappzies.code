@@ -1,56 +1,64 @@
 package com.swapper.monolith.IngestionService.impl;
 
 import com.swapper.monolith.ItemService.service.GenreService;
+import com.swapper.monolith.ItemService.service.PlatformService;
 import com.swapper.monolith.external.dto.GenreDto;
+import com.swapper.monolith.external.dto.PlatformDto;
+import jakarta.transaction.Transactional;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 @Component
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class IngestionServiceImpl {
-    Logger LOGGER = LoggerFactory.getLogger(IngestionServiceImpl.class);
-//    GameRepository gameRepository;
-//    GameApi gameApi;
-
+    PlatformService platformService;
     GenreService genreService;
 
-//    @Async
-//    @Transactional
-//    public void populateLocalDB(GameSearchResponse externalResponse) {
-//        LOGGER.info("Populate local DB");
-//            List<GameDto> apiGameDtos = externalResponse.getGameDtoList();
-//            if(apiGameDtos == null || apiGameDtos.isEmpty()) return;
-//
-//            Map<Long,GameDto> apiGames = new HashMap<>();
-//            apiGameDtos.forEach(gameDto -> {
-//                if(!apiGames.containsKey(gameDto.getId())){
-//                    apiGames.put(gameDto.getId(),gameDto);
-//                }
-//            });
-//            Set<Long> apiGameIds = apiGameDtos.stream().map(GameDto::getId).collect(Collectors.toSet());
-//            Set<Long> dbGameEntities = new HashSet<>(gameRepository.findIdsByIdLn(apiGameIds));
-//            List<GameEntity> newGames =  new ArrayList<>();
-//            apiGames.keySet().forEach(gameId -> {
-//                if(!dbGameEntities.contains(gameId)){
-//                    newGames.add(gameMapper.toEntity(apiGames.get(gameId)));
-//                }
-//            });
-//            gameRepository.saveAll(newGames);
-//    }
+    @Async
+    @Transactional
+    public <D, E> void populateDB(
+            List<D> dtos,
+            Function<D, Long> idExtractor,
+            Function<Set<Long>, Collection<Long>> existingIdsFetcher,
+            Function<D, E> toEntityMapper,
+            Consumer<List<E>> saveAll) {
 
-    @EventListener(ApplicationReadyEvent.class)
-    public void seedGenres() {
-        List<GenreDto> gameDtos = genreService.getAllGenres();
-        genreService.save(gameDtos);
+        if (dtos == null || dtos.isEmpty()) return;
+
+        Map<Long, D> dtoMap = new HashMap<>();
+        dtos.forEach(dto -> dtoMap.putIfAbsent(idExtractor.apply(dto), dto));
+
+        Set<Long> existingIds = new HashSet<>(existingIdsFetcher.apply(dtoMap.keySet()));
+
+        List<E> newEntities = dtoMap.keySet().stream()
+                .filter(id -> !existingIds.contains(id))
+                .map(id -> toEntityMapper.apply(dtoMap.get(id)))
+                .toList();
+
+        saveAll.accept(newEntities);
     }
+
+//    @EventListener(ApplicationReadyEvent.class)
+//    public void seedGenres() {
+//        List<GenreDto> gameDtos = genreService.getGenres();
+//        List<PlatformDto> platformDtos = platformService.getPlatforms();
+//        try {
+//            genreService.save(gameDtos);
+//            platformService.save(platformDtos);
+//        }
+//        catch(Exception e){
+//            throw new RuntimeException(e.getMessage());
+//        }
+//    }
 
 }

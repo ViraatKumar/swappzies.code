@@ -4,9 +4,6 @@ import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Data;
 import lombok.experimental.FieldDefaults;
-import org.hibernate.annotations.CreationTimestamp;
-
-import java.util.Date;
 
 @Data
 @Entity
@@ -14,7 +11,6 @@ import java.util.Date;
 @FieldDefaults(level= AccessLevel.PRIVATE)
 public class GenreEntity {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
 
     String name;

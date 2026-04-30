@@ -1,11 +1,14 @@
 package com.swapper.monolith.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.swapper.monolith.ItemService.entity.UserGame;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.util.List;
 import java.util.Set;
 
 @Data
@@ -39,5 +42,7 @@ public class User {
     )
     Set<Roles> roles;
 
+    @OneToMany(mappedBy = "user")
+    List<UserGame> userGames;
 
 }

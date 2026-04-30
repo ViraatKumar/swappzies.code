@@ -18,6 +18,8 @@ import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @Component
 @RequiredArgsConstructor
@@ -29,10 +31,10 @@ public class GenreService {
     GameApi gameApi;
 
     private static final String EXT_API_URL = "https://api.igdb.com/v4/genres";
-    private static final String GENRE_QUERY = "fields checksum,created_at,name,slug,updated_at,url;";
-    public List<GenreDto> getAllGenres() {
+    private static final String GENRE_QUERY = "fields checksum,created_at,name,slug,updated_at,url; limit 500;";
+    public List<GenreDto> getGenres() {
         List<GenreEntity> genreEntities = genreRepository.findAll();
-        if(genreEntities.isEmpty()){
+        if(genreEntities.isEmpty()) {
             return getGenresExt();
         }
         return genreEntities.stream().map(GenreMapper::toDto).toList();
@@ -56,8 +58,34 @@ public class GenreService {
             logger.info("Empty Genres Dto - " + genreDtos);
             return;
         }
-        List<GenreEntity> genreEntities = genreDtos.stream().map(GenreMapper::toEntity).toList();
-        genreRepository.saveAll(genreEntities);
+        Set<Long> existingIds = genreRepository.findAll().stream()
+                .map(GenreEntity::getId)
+                .collect(java.util.stream.Collectors.toSet());
+        List<GenreEntity> newEntities = genreDtos.stream()
+                .map(GenreMapper::toEntity)
+                .filter(e -> !existingIds.contains(e.getId()))
+                .toList();
+        if (newEntities.isEmpty()) {
+            logger.info("All genres already exist, skipping save");
+            return;
+        }
+        genreRepository.saveAll(newEntities);
+    }
+    public GenreDto getGenresListByIdsLn(List<Long> id) {
+        List<GenreEntity> genreEntities = genreRepository.findAllByIdIn(id);
+        GenreEntity genreEntity = genreEntities.isEmpty() ? null : genreEntities.get(0);
+        if(genreEntity == null) {
+            throw new RuntimeException("Genre not found");
+        }
+        return GenreMapper.toDto(genreEntity);
+    }
+    public List<GenreDto> getGenresByName(List<String> genreNames){
+        List<GenreEntity> genreEntity = genreRepository.findAllByNameIn(genreNames);
+        return genreEntity.stream().map(GenreMapper::toDto).toList();
+    }
+
+    Map<Long,GenreDto> getGenresByGenreIds(List<Long> genreIds){
+
     }
 
 }
