@@ -6,6 +6,10 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+
+import java.time.Instant;
 import java.util.Set;
 
 @Data
@@ -31,6 +35,19 @@ public class User {
     @Column(name="phone_no")
     String phoneNo;
 
+    @Column(name = "display_name")
+    String displayName;
+
+    @Column(columnDefinition = "TEXT")
+    String bio;
+
+    @Column(name = "avatar_url")
+    String avatarUrl;
+
+    Double lat;
+
+    Double lng;
+
     @ManyToMany
     @JoinTable(
             name = "user_roles",
@@ -39,5 +56,16 @@ public class User {
     )
     Set<Roles> roles;
 
+    @CreationTimestamp
+    @Column(name="created_at")
+    Instant createdAt;
+
+    @UpdateTimestamp
+    @Column(name="updated_at")
+    Instant updatedAt;
+
+    @Version
+    @Column(name="version",nullable = false)
+    Long version;
 
 }

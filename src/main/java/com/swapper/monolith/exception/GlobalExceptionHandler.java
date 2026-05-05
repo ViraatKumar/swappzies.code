@@ -2,6 +2,8 @@ package com.swapper.monolith.exception;
 
 import com.swapper.monolith.dto.ErrorResponse;
 import com.swapper.monolith.exception.CustomExceptions.DuplicatedResourceException;
+import com.swapper.monolith.exception.CustomExceptions.ForbiddenException;
+import com.swapper.monolith.exception.CustomExceptions.ResourceNotFoundException;
 import com.swapper.monolith.exception.CustomExceptions.TokenExpiredException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
@@ -10,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.InsufficientAuthenticationException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -68,5 +71,33 @@ public class GlobalExceptionHandler {
                         .status(HttpStatus.UNAUTHORIZED)
                         .path(request.getServletPath())
                 .build());
+    }
+    @ExceptionHandler(ForbiddenException.class)
+    public ResponseEntity<?> forbiddenException(ForbiddenException e, HttpServletRequest request) {
+        LOGGER.error(exceptionString, e.getMessage());
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ErrorResponse.errorBuilder()
+                .message(e.getMessage())
+                .status(HttpStatus.FORBIDDEN)
+                .path(request.getServletPath())
+                .build());
+    }
+
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<?> resourceNotFoundException(ResourceNotFoundException e, HttpServletRequest request) {
+        LOGGER.error(exceptionString, e.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ErrorResponse.errorBuilder()
+                .message(e.getMessage())
+                .status(HttpStatus.NOT_FOUND)
+                .path(request.getServletPath())
+                .build());
+    }
+
+    @ExceptionHandler(InsufficientAuthenticationException.class)
+    public ResponseEntity<?> insufficientAuthenticationException(InsufficientAuthenticationException e, HttpServletRequest request){
+        LOGGER.error(exceptionString,e.getMessage());
+        return ResponseEntity.status(403).body(ErrorResponse.errorBuilder()
+                .message(e.getMessage())
+        .status(HttpStatus.UNAUTHORIZED)
+                .path(request.getServletPath()));
     }
 }

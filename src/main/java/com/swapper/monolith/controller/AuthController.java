@@ -1,6 +1,5 @@
 package com.swapper.monolith.controller;
 
-import com.swapper.monolith.dto.ApiResponse;
 import com.swapper.monolith.dto.EmailSignUpRequest;
 import com.swapper.monolith.dto.ForgotPasswordRequest;
 import com.swapper.monolith.dto.LoginRequest;
@@ -12,7 +11,6 @@ import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
@@ -46,26 +44,19 @@ public class AuthController {
     }
 
     @GetMapping("/username-exists")
-    public ResponseEntity<ApiResponse<Boolean>> checkUsername(@RequestParam("username") String username) {
-        ApiResponse<Boolean> response = authService.checkUsername(username);
-        return ResponseEntity.status(response.status()).body(response);
+    public ResponseEntity<Boolean> checkUsername(@RequestParam("username") String username) {
+        return ResponseEntity.ok(authService.checkUsername(username));
     }
 
     @PostMapping("/forgot-password")
-    public ResponseEntity<ApiResponse<Void>> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+    public ResponseEntity<String> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
         authService.forgotPassword(request);
-        return ResponseEntity.ok(ApiResponse.<Void>builder()
-                .status(HttpStatus.OK)
-                .message("If this email is registered, a reset link has been sent")
-                .build());
+        return ResponseEntity.ok("If this email is registered, a reset link has been sent");
     }
 
     @PostMapping("/reset-password")
-    public ResponseEntity<ApiResponse<Void>> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+    public ResponseEntity<String> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
         authService.resetPassword(request);
-        return ResponseEntity.ok(ApiResponse.<Void>builder()
-                .status(HttpStatus.OK)
-                .message("Password reset successfully")
-                .build());
+        return ResponseEntity.ok("Password reset successfully");
     }
 }

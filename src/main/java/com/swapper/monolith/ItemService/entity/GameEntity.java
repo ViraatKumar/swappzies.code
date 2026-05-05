@@ -1,8 +1,6 @@
 package com.swapper.monolith.ItemService.entity;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.swapper.monolith.ItemService.dto.GameCategory;
-import com.swapper.monolith.ItemService.dto.GameStatus;
 import com.vladmihalcea.hibernate.type.json.JsonBinaryType;
 import jakarta.persistence.*;
 import lombok.AccessLevel;

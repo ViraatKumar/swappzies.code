@@ -17,5 +17,11 @@ public class DuplicatedResourceException extends RuntimeException {
         this.error = error;
         this.httpStatus = error.getHttpStatus();
     }
+    public DuplicatedResourceException(ApiResponses error, String message) {
+        super(message);
+        this.message = message;
+        this.error = error;
+        this.httpStatus = error.getHttpStatus();
+    }
 
 }

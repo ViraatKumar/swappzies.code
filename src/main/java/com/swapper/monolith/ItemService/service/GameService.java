@@ -1,47 +1,47 @@
 package com.swapper.monolith.ItemService.service;
 
-import com.swapper.monolith.ItemService.dto.GameDto;
-import com.swapper.monolith.ItemService.dto.GameSearchResponse;
+import com.swapper.monolith.ItemService.dto.FilterGames.GameResponse;
+import com.swapper.monolith.ItemService.dto.*;
+import com.swapper.monolith.ItemService.specification.GameSpecification;
 import com.swapper.monolith.ItemService.entity.GameEntity;
 import com.swapper.monolith.ItemService.mapper.GameMapper;
 import com.swapper.monolith.ItemService.repository.GameRepository;
+import com.swapper.monolith.ItemService.dto.GenreDto;
+import com.swapper.monolith.ItemService.dto.PlatformDto;
+import com.swapper.monolith.exception.CustomExceptions.ResourceNotFoundException;
 import com.swapper.monolith.external.twitch.GameApi;
-import jakarta.transaction.Transactional;
-import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.scheduling.annotation.Async;
+import org.springframework.data.domain.*;
+import org.springframework.security.authentication.InsufficientAuthenticationException;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
 public class GameService {
 
-    @Getter
-    private GameService self;
+    private final GenreService genreService;
+    private final PlatformService platformService;
     Logger logger = LoggerFactory.getLogger(GameService.class);
     private final GameApi gameApi;
     private final GameRepository gameRepository;
     private final GameMapper gameMapper;
     private final int DB_RESULT_STRENGTH = 10;
+    private final IngestionService ingestionService;
+    private final Set<String> VALID_SORT_KEYS = Set.of("name");
+    private final Set<Sort.Direction> VALID_SORT_DIRECTIONS = Set.of(Sort.Direction.ASC, Sort.Direction.DESC);
 
-    public GameService(GameApi gameApi, GameRepository gameRepository, GameMapper gameMapper) {
+    public GameService(GameApi gameApi, GameRepository gameRepository, GameMapper gameMapper, IngestionService ingestionService, GenreService genreService, PlatformService platformService) {
         this.gameApi = gameApi;
         this.gameRepository = gameRepository;
         this.gameMapper = gameMapper;
-    }
-    @Autowired
-    public void setSelf(@Lazy GameService self){
-        this.self = self;
+        this.ingestionService = ingestionService;
+        this.genreService = genreService;
+        this.platformService = platformService;
     }
 
     /*
@@ -49,13 +49,13 @@ public class GameService {
     Step 2: Combine the responses by unique ID's and return
     Step 3: in an async operation - populate DB with ID's it did not have before
      */
-    public GameSearchResponse getGameByName(String gameName){
+    public List<GameResponse> getGameByName(String gameName){
         logger.debug("Getting Game by Name {}", gameName);
         Pageable pageable = PageRequest.of(0, 10);
         Page<GameEntity> gameEntities = gameRepository.findGamesOfSimilarName(gameName,pageable);
         GameSearchResponse gameSearchResponse = new GameSearchResponse(gameEntities.stream().map(gameMapper::toDto).toList());
         if(isResponseStrong(gameSearchResponse)){
-            return gameSearchResponse;
+            return gameSearchResponse.getGameDtoList().stream().map(this::create).toList();
         }
         logger.warn("Weak response from DB - Searching API");
 
@@ -63,41 +63,116 @@ public class GameService {
         GameSearchResponse twitchResponse = gameApi.searchByGameName(gameName);
         logger.info("Game Search Response from API: {}", twitchResponse.getGameDtoList());
 
-        // runs async to this request
-        self.populateDBWithMissingValues(twitchResponse);
+        // async call
+        ingestionService.populateDB(
+                twitchResponse.getGameDtoList(),
+                GameDto::getId,
+                gameRepository::findIdsByIdLn,
+                gameMapper::toEntity,
+                gameRepository::saveAll
+        );
 
-        return twitchResponse;
-
+        return twitchResponse.getGameDtoList().stream().map(this::create).toList();
     }
+
+    public Page<GameResponse> searchGames(GameFilterRequest filter) {
+        if(SecurityContextHolder.getContext().getAuthentication() == null) {
+            throw new InsufficientAuthenticationException("Cannot View games without Authentication");
+        }
+        GameProcessedFilters gameProcessedFilters = getProcessedFilters(filter);
+        Pageable pageable = PageRequest.of(gameProcessedFilters.getPageNo(), gameProcessedFilters.getPageSize(), gameProcessedFilters.getSort());
+
+        Page<GameResponse> dbResults = gameRepository.findAll(GameSpecification.fromFilter(gameProcessedFilters), pageable)
+                .map(gameMapper::toDto)
+                .map(this::create);
+
+        String name = gameProcessedFilters.getName();
+        if (name != null && !name.isBlank() && dbResults.getTotalElements() < DB_RESULT_STRENGTH) {
+            logger.warn("Weak DB response for name '{}' in searchGames - falling back to IGDB", name);
+
+            GameSearchResponse igdbResponse = gameApi.searchByGameName(name);
+
+            ingestionService.populateDB(
+                    igdbResponse.getGameDtoList(),
+                    GameDto::getId,
+                    gameRepository::findIdsByIdLn,
+                    gameMapper::toEntity,
+                    gameRepository::saveAll
+            );
+
+            List<GameResponse> igdbMapped = igdbResponse.getGameDtoList().stream()
+                    .map(this::create).toList();
+            return new PageImpl<>(igdbMapped, pageable, igdbMapped.size());
+        }
+        return dbResults;
+    }
+
+    public GameEntity getGameById(long id) {
+        return gameRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Game not found"));
+    }
+
+    private GameProcessedFilters getProcessedFilters(GameFilterRequest gameFilterRequest) {
+        GameProcessedFilters gameProcessedFilters = new GameProcessedFilters();
+        String sortKey;
+        Sort.Direction sortDirection;
+        int pageNo = 0;
+        int pageSize = 10;
+        if(gameFilterRequest.getSortKey() == null || !VALID_SORT_KEYS.contains(gameFilterRequest.getSortKey())) {
+         sortKey = "name";
+        }
+        else{
+            sortKey = gameFilterRequest.getSortKey();
+        }
+
+
+        if(gameFilterRequest.getSortDirection() == null || !VALID_SORT_DIRECTIONS.contains(gameFilterRequest.getSortDirection())) {
+            sortDirection = Sort.Direction.ASC;
+        }
+        else if(gameFilterRequest.getSortDirection().equals(Sort.Direction.DESC)){
+            sortDirection = Sort.Direction.DESC;
+        }
+        else{
+            sortDirection = Sort.Direction.ASC;
+        }
+        gameProcessedFilters.setSort(Sort.by(sortDirection,sortKey));
+
+        if(gameFilterRequest.getPage() <= 0){
+            gameProcessedFilters.setPageNo(pageNo);
+        }
+        else{
+            gameProcessedFilters.setPageNo(gameFilterRequest.getPage());
+        }
+
+        if(gameFilterRequest.getPageSize() <= 0 || gameFilterRequest.getPageSize() >= 200){
+            gameProcessedFilters.setPageSize(pageSize);
+        }
+        else{
+            gameProcessedFilters.setPageSize(gameFilterRequest.getPageSize());
+        }
+        List<GenreDto> genreDtos = genreService.getGenresByName(gameFilterRequest.getGenres());
+        List<Long> genreIds = genreDtos.stream().map(GenreDto::getId).toList();
+
+        List<PlatformDto> platformDtos = platformService.getPlatformDtos(gameFilterRequest.getPlatforms());
+        List<Long> platformIds = platformDtos.stream().map(PlatformDto::getId).toList();
+
+        gameProcessedFilters.setName(gameFilterRequest.getName());
+        gameProcessedFilters.setGenreIds(genreIds);
+        gameProcessedFilters.setPlatformIds(platformIds);
+        return gameProcessedFilters;
+    }
+
     private boolean isResponseStrong(GameSearchResponse gameSearchResponse){
         return gameSearchResponse.getGameDtoList()!=null && gameSearchResponse.getGameDtoList().size()>=DB_RESULT_STRENGTH;
     }
 
-    /**
-     * Search the DB with the id's that we recieved from the IGDB API
-     * Push
-     * @param apiSearchResponse contains API Search Response from the IGDB API and populates using these games into the service DB if these games are missing
-     */
-    @Async
-    @Transactional
-    public void populateDBWithMissingValues(GameSearchResponse apiSearchResponse){
-        List<GameDto> apiGameDtos = apiSearchResponse.getGameDtoList();
-        if(apiGameDtos == null || apiGameDtos.isEmpty()) return;
 
-        Map<Long,GameDto> apiGames = new HashMap<>();
-        apiGameDtos.forEach(gameDto -> {
-            if(!apiGames.containsKey(gameDto.getId())){
-                apiGames.put(gameDto.getId(),gameDto);
-            }
-        });
-        Set<Long> apiGameIds = apiGameDtos.stream().map(GameDto::getId).collect(Collectors.toSet());
-        Set<Long> dbGameEntities = new HashSet<>(gameRepository.findIdsByIdLn(apiGameIds));
-        List<GameEntity> newGames =  new ArrayList<>();
-        apiGames.keySet().forEach(gameId -> {
-            if(!dbGameEntities.contains(gameId)){
-                newGames.add(gameMapper.toEntity(apiGames.get(gameId)));
-            }
-        });
-        gameRepository.saveAll(newGames);
+    private GameResponse create(GameDto gameDto) {
+
+        GameResponse gameResponse = new GameResponse();
+        gameResponse.setId(gameDto.getId());
+        gameResponse.setName(gameDto.getName());
+        gameResponse.setPlatform(platformService.getPlatformFromIds(gameDto.getPlatforms()));
+        gameResponse.setGenre(genreService.getGenresByIds(gameDto.getGenres()));
+        return gameResponse;
     }
 }

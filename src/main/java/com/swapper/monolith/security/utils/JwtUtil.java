@@ -1,6 +1,6 @@
 package com.swapper.monolith.security.utils;
 
-import com.swapper.monolith.security.SecurityConfiguration.SecurityConfiguration;
+import com.swapper.monolith.config.SecurityProperties;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -19,24 +19,24 @@ import java.util.function.Function;
 @Service
 @FieldDefaults(level = AccessLevel.PRIVATE,makeFinal = true)
 public class JwtUtil {
-    SecurityConfiguration securityConfiguration;
+    SecurityProperties securityProperties;
     Key key;
-    public JwtUtil(SecurityConfiguration securityConfiguration) {
-        this.securityConfiguration = securityConfiguration;
-        this.key = Keys.hmacShaKeyFor(securityConfiguration.getSecretKey().getBytes());
+    public JwtUtil(SecurityProperties securityProperties) {
+        this.securityProperties = securityProperties;
+        this.key = Keys.hmacShaKeyFor(securityProperties.getSecretKey().getBytes());
     }
     public String generateToken(Map<String,Object> claims, String username) {
         return Jwts.builder()
                 .claims(claims)
                 .subject(username)
                 .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + securityConfiguration.getExpiration()))
+                .expiration(new Date(System.currentTimeMillis() + securityProperties.getExpiration()))
                 .signWith(getSignKey(),SignatureAlgorithm.HS256)
                 .compact();
     }
 
     private Key getSignKey(){
-        String secretKey = securityConfiguration.getSecretKey();
+        String secretKey = securityProperties.getSecretKey();
         byte[] keyBytes = Decoders.BASE64.decode(secretKey);
         return Keys.hmacShaKeyFor(keyBytes);
     }

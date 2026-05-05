@@ -2,7 +2,11 @@ package com.swapper.monolith.external.twitch;
 
 import com.swapper.monolith.ItemService.dto.GameDto;
 import com.swapper.monolith.ItemService.dto.GameSearchResponse;
+import com.swapper.monolith.ItemService.mapper.GameMapper;
+import com.swapper.monolith.ItemService.mapper.GenreMapper;
 import com.swapper.monolith.external.ExternalApiClient;
+import com.swapper.monolith.ItemService.dto.GenreDto;
+import com.swapper.monolith.ItemService.entity.GenreEntity;
 import com.swapper.monolith.external.dto.TokenResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
@@ -11,19 +15,20 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Component
 @Slf4j
 public class GameApi {
     private final ExternalApiClient client;
     private final TwitchConfiguration configuration;
-    private final HttpHeaders headers;
+    private final GameMapper gameMapper;
     private TokenResponse cachedToken;
 
-    public GameApi(ExternalApiClient client, TwitchConfiguration configuration) {
+    public GameApi(ExternalApiClient client, TwitchConfiguration configuration, GameMapper gameMapper) {
         this.client = client;
         this.configuration = configuration;
-        this.headers = createHeaders();
+        this.gameMapper = gameMapper;
     }
 
     /**
@@ -77,5 +82,28 @@ public class GameApi {
                 GameDto[].class
         ));
         return new GameSearchResponse(gameDTOList);
+    }
+
+    public List<GenreDto> getGenres(){
+        HttpHeaders headers = createHeaders();
+        String requestBody = "fields checksum,created_at,name,slug,updated_at,url;";
+        List<GenreEntity> genresResponse = List.of(
+                client.execute("https://api.igdb.com/v4/genres",
+                        HttpMethod.GET,
+                        requestBody,
+                        headers,
+                        GenreEntity[].class));
+
+        return genresResponse
+                .stream()
+                .map(GenreMapper::toDto)
+                .toList();
+    }
+
+    public <REQ,RES> RES searchFromIGDB(String url,
+                                    HttpMethod method,
+                                    REQ requestBody,
+                                    Class<RES> responseType){
+        return client.execute(url,method,requestBody,createHeaders(),responseType);
     }
 }

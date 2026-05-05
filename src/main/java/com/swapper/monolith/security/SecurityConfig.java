@@ -1,7 +1,7 @@
 package com.swapper.monolith.security;
 
+import com.swapper.monolith.config.SecurityProperties;
 import com.swapper.monolith.security.SecurityConfiguration.JwtAuthFilter;
-import com.swapper.monolith.security.SecurityConfiguration.SecurityConfiguration;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
@@ -29,7 +29,7 @@ import java.util.List;
 @Slf4j
 @RequiredArgsConstructor
 public class SecurityConfig {
-    private final SecurityConfiguration securityConfiguration;
+    private final SecurityProperties securityProperties;
     private final List<String> authorizeEndpoints = List.of("/auth/**");
     @Bean
     SecurityFilterChain publicEndpointsSecurity(HttpSecurity http, JwtAuthFilter jwtAuthFilter) throws Exception {
@@ -49,9 +49,10 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(securityConfiguration.getCors().getAllowedOrigins());
+        config.setAllowedOrigins(securityProperties.getCors().getAllowedOrigins());
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        config.setAllowedHeaders(List.of("Authorization", "Content-Type"));
+        config.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Request-ID"));
+        config.setExposedHeaders(List.of("X-Request-ID"));
         config.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

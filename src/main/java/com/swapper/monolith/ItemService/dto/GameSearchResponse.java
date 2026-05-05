@@ -1,13 +1,14 @@
 package com.swapper.monolith.ItemService.dto;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.util.List;
 
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class GameSearchResponse {
     List<GameDto> gameDtoList;
-    public GameSearchResponse(List<GameDto> gameDtos) {
-        this.gameDtoList = gameDtos;
-    }
 }

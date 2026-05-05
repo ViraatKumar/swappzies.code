@@ -76,7 +76,7 @@ public class AuthService {
         return userService.addUser(emailSignUpRequest);
     }
 
-    public ApiResponse<Boolean> checkUsername(String username) {
+    public boolean checkUsername(String username) {
         return userService.checkUsername(username);
     }
 
