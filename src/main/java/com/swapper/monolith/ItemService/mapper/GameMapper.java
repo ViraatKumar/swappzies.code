@@ -1,7 +1,6 @@
 package com.swapper.monolith.ItemService.mapper;
 
 import com.swapper.monolith.ItemService.dto.GameDto;
-import com.swapper.monolith.ItemService.dto.GameResponse;
 import com.swapper.monolith.ItemService.entity.GameEntity;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Component;

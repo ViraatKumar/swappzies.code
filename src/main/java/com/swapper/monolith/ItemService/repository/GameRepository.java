@@ -10,11 +10,12 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 @Repository
 public interface GameRepository extends JpaRepository<GameEntity, Long>, JpaSpecificationExecutor<GameEntity> {
-    GameEntity findGameById(long id);
+    Optional<GameEntity> findById(long id);
     @Query( value = "SELECT * FROM game WHERE name % :gameName " +
             "ORDER BY similarity(name,:gameName) DESC",
             countQuery = "SELECT count(*) FROM game WHERE name % :gameName",

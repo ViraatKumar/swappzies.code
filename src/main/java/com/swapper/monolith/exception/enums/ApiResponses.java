@@ -8,7 +8,7 @@ import org.springframework.http.HttpStatus;
 @FieldDefaults(level = AccessLevel.PRIVATE,makeFinal=true)
 public enum ApiResponses {
     SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "Internal Server Error"),
-    USER_DUPLICATED_ERROR(HttpStatus.CONFLICT,"This User Already Exists"),
+    DUPLICATED_RESOURCE(HttpStatus.CONFLICT,"This Resource Already Exists"),
     RESOURCE_NOT_FOUND(HttpStatus.NOT_FOUND, "Resource Not Found"),
     CREATED(HttpStatus.CREATED, "Created Successfully"),
     OK(HttpStatus.OK, "Retrieved Successfully"),
@@ -16,6 +16,8 @@ public enum ApiResponses {
     REFRESH_TOKEN_INVALID(HttpStatus.UNAUTHORIZED, "Invalid refresh token"),
     PASSWORD_RESET_TOKEN_EXPIRED(HttpStatus.UNAUTHORIZED, "Password reset link has expired, please request a new one"),
     PASSWORD_RESET_TOKEN_INVALID(HttpStatus.UNAUTHORIZED, "Invalid password reset token"),
+    LISTING_ACTIVE_TRANSACTION(HttpStatus.CONFLICT, "Cannot delete a listing with an active transaction in progress"),
+    FORBIDDEN(HttpStatus.FORBIDDEN, "You do not have permission to perform this action"),
     ;
     HttpStatus httpStatus;
     String message;

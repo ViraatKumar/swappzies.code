@@ -1,8 +1,8 @@
 package com.swapper.monolith.ItemService.mapper;
 
 import com.swapper.monolith.ItemService.dto.GameDto;
-import com.swapper.monolith.external.dto.GenreDto;
-import com.swapper.monolith.model.GenreEntity;
+import com.swapper.monolith.ItemService.dto.GenreDto;
+import com.swapper.monolith.ItemService.entity.GenreEntity;
 import org.springframework.stereotype.Component;
 
 @Component

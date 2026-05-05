@@ -20,6 +20,6 @@ public class TraderUserDetailsServiceImpl implements UserDetailsService {
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
        User user =  userRepository.findByUsername(username)
                .orElseThrow(()-> new RuntimeException());
-       return TradeUserDetailsImpl.build(user);
+       return UserDetailsImpl.build(user);
     }
 }

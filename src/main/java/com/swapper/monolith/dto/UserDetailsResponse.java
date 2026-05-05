@@ -11,6 +11,9 @@ public class UserDetailsResponse {
     String username;
     String email;
     String phoneNumber;
+    String displayName;
+    String bio;
+    String avatarUrl;
 
     public static UserDetailsResponse from(User user){
         return UserDetailsResponse.builder()
@@ -18,6 +21,9 @@ public class UserDetailsResponse {
                 .username(user.getUsername())
                 .email(user.getEmail())
                 .phoneNumber(user.getPhoneNo())
+                .displayName(user.getDisplayName())
+                .bio(user.getBio())
+                .avatarUrl(user.getAvatarUrl())
                 .build();
     }
 }

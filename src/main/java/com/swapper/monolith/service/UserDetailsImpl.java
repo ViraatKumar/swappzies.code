@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @FieldDefaults(level = AccessLevel.PRIVATE,makeFinal = true)
-public class TradeUserDetailsImpl implements UserDetails {
+public class UserDetailsImpl implements UserDetails {
     @Serial
     long serialVersionUID = 1L;
     String userId;
@@ -22,18 +22,18 @@ public class TradeUserDetailsImpl implements UserDetails {
     String password;
     Collection<? extends GrantedAuthority> authorities;
 
-    public static TradeUserDetailsImpl build(User user) {
+    public static UserDetailsImpl build(User user) {
         List<GrantedAuthority> roles = user.getRoles().stream()
                 .map(role -> new SimpleGrantedAuthority(role.getRole().name()))
                 .collect(Collectors.toList());
-        return new TradeUserDetailsImpl(
+        return new UserDetailsImpl(
                 user.getUserId(),
                 user.getUsername(),
                 user.getPassword(),
                 roles
         );
     }
-    public TradeUserDetailsImpl(String userId, String username, String password,
+    public UserDetailsImpl(String userId, String username, String password,
                                 Collection<? extends GrantedAuthority> authorities) {
         this.userId = userId;
         this.username = username;

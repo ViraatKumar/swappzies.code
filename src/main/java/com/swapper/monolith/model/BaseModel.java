@@ -1,5 +1,6 @@
 package com.swapper.monolith.model;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.EntityListeners;
 import jakarta.persistence.MappedSuperclass;
 import jakarta.persistence.Version;
@@ -20,5 +21,6 @@ public abstract class BaseModel {
     private Date lastModifiedDate;
 
     @Version
+    @Column(nullable=false)
     Long version;
 }

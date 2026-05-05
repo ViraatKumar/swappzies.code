@@ -8,6 +8,7 @@ import java.util.List;
 
 @Data
 public class GameProcessedFilters {
+    String name;
     List<Long> genreIds;
     List<Long> platformIds;
     Sort sort;

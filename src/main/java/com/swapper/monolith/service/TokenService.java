@@ -2,13 +2,13 @@ package com.swapper.monolith.service;
 
 import com.swapper.monolith.dto.UserTokenDto;
 import com.swapper.monolith.exception.CustomExceptions.TokenExpiredException;
-import com.swapper.monolith.exception.ResourceNotFoundException;
+import com.swapper.monolith.exception.CustomExceptions.ResourceNotFoundException;
 import com.swapper.monolith.exception.enums.ApiResponses;
 import com.swapper.monolith.model.User;
 import com.swapper.monolith.model.UserToken;
 import com.swapper.monolith.model.enums.TokenType;
 import com.swapper.monolith.repository.UserTokenRepository;
-import com.swapper.monolith.security.SecurityConfiguration.SecurityConfiguration;
+import com.swapper.monolith.config.SecurityProperties;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -30,7 +30,7 @@ import java.util.UUID;
 public class TokenService {
 
     UserTokenRepository userTokenRepository;
-    SecurityConfiguration securityConfiguration;
+    SecurityProperties securityProperties;
     static final String HASH_ALGORITHM = "SHA-256";
 
     @Transactional
@@ -40,8 +40,8 @@ public class TokenService {
         }
         String rawToken = UUID.randomUUID().toString();
         long expirationMillis = switch (type) {
-            case REFRESH -> securityConfiguration.getRefreshTokenExpiration();
-            case PASSWORD_RESET -> securityConfiguration.getPasswordResetTokenExpiration();
+            case REFRESH -> securityProperties.getRefreshTokenExpiration();
+            case PASSWORD_RESET -> securityProperties.getPasswordResetTokenExpiration();
         };
         UserToken token = UserToken.builder()
                 .token(hash(rawToken))

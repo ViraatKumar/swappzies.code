@@ -1,9 +1,6 @@
 package com.swapper.monolith.ItemService.entity;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.swapper.monolith.ItemService.dto.GameCategory;
-import com.swapper.monolith.ItemService.dto.GameStatus;
-import com.swapper.monolith.model.GenreEntity;
 import com.vladmihalcea.hibernate.type.json.JsonBinaryType;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -123,7 +120,7 @@ public class GameEntity {
 
     @Type(JsonBinaryType.class)
     @Column(name = "genres", columnDefinition = "jsonb")
-    private List<GenreEntity> genres;
+    private List<Long> genres;
 
     @Column(name = "hypes")
     private Integer hypes;

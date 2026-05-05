@@ -1,27 +1,28 @@
 package com.swapper.monolith.ItemService.service;
 
-import com.swapper.monolith.ItemService.entity.GameEntity;
-import com.swapper.monolith.ItemService.mapper.GameMapper;
 import com.swapper.monolith.ItemService.mapper.GenreMapper;
 import com.swapper.monolith.ItemService.repository.GenreRepository;
 import com.swapper.monolith.external.ExternalApiClient;
-import com.swapper.monolith.external.dto.GenreDto;
+import com.swapper.monolith.ItemService.dto.GameDataValues;
+import com.swapper.monolith.ItemService.dto.GenreDto;
+import com.swapper.monolith.ItemService.entity.GenreEntity;
 import com.swapper.monolith.external.twitch.GameApi;
-import com.swapper.monolith.model.GenreEntity;
 import jakarta.transaction.Transactional;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationContext;
 import org.springframework.http.HttpMethod;
-import org.springframework.stereotype.Component;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
-@Component
+@Service
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class GenreService {
@@ -29,15 +30,21 @@ public class GenreService {
     GenreRepository genreRepository;
     private final ExternalApiClient client;
     GameApi gameApi;
-
+    ApplicationContext applicationContext;
     private static final String EXT_API_URL = "https://api.igdb.com/v4/genres";
     private static final String GENRE_QUERY = "fields checksum,created_at,name,slug,updated_at,url; limit 500;";
-    public List<GenreDto> getGenres() {
-        List<GenreEntity> genreEntities = genreRepository.findAll();
-        if(genreEntities.isEmpty()) {
-            return getGenresExt();
+    public GameDataValues getGenres() {
+        List<String> names = genreRepository.findDistinctGenreNames();
+        if(!names.isEmpty()) {
+            return GameDataValues.builder()
+                    .values(names)
+                    .build();
         }
-        return genreEntities.stream().map(GenreMapper::toDto).toList();
+        List<GenreDto> genreDtos = getGenresExt();
+        applicationContext.getBean(GenreService.class).save(genreDtos);
+        return GameDataValues.builder()
+                .values(genreDtos.stream().map(GenreDto::getName).collect(Collectors.toList()))
+                .build();
     }
 
     private List<GenreDto> getGenresExt(){
@@ -51,6 +58,7 @@ public class GenreService {
         return genreEntity.stream().map(GenreMapper::toDto).toList();
     }
 
+    @Async
     @Transactional
     public void save(List<GenreDto> genreDtos) {
         logger.info("Saving genres to DB");
@@ -71,21 +79,16 @@ public class GenreService {
         }
         genreRepository.saveAll(newEntities);
     }
-    public GenreDto getGenresListByIdsLn(List<Long> id) {
-        List<GenreEntity> genreEntities = genreRepository.findAllByIdIn(id);
-        GenreEntity genreEntity = genreEntities.isEmpty() ? null : genreEntities.get(0);
-        if(genreEntity == null) {
-            throw new RuntimeException("Genre not found");
+    public List<String> getGenresByIds(List<Long> ids) {
+        if(ids == null || ids.isEmpty()){
+            return null;
         }
-        return GenreMapper.toDto(genreEntity);
+        return genreRepository.findAllByIdIn(ids).stream().map(GenreEntity::getName).toList();
+
     }
     public List<GenreDto> getGenresByName(List<String> genreNames){
         List<GenreEntity> genreEntity = genreRepository.findAllByNameIn(genreNames);
         return genreEntity.stream().map(GenreMapper::toDto).toList();
-    }
-
-    Map<Long,GenreDto> getGenresByGenreIds(List<Long> genreIds){
-
     }
 
 }
