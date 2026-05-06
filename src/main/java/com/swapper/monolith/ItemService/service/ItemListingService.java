@@ -1,0 +1,172 @@
+package com.swapper.monolith.ItemService.service;
+
+import com.swapper.monolith.ItemService.constants.Condition;
+import com.swapper.monolith.ItemService.constants.ItemStatus;
+import com.swapper.monolith.ItemService.constants.ListingState;
+import com.swapper.monolith.ItemService.constants.Platform;
+import com.swapper.monolith.ItemService.dto.ListingFilterRequest;
+import com.swapper.monolith.ItemService.dto.UserGamePost.CreateListingRequest;
+import com.swapper.monolith.ItemService.dto.UserGamePost.UpdateListingRequest;
+import com.swapper.monolith.ItemService.dto.UserGamePost.UserGamePostDto;
+import com.swapper.monolith.ItemService.entity.GameEntity;
+import com.swapper.monolith.ItemService.entity.UserGamePost;
+import com.swapper.monolith.ItemService.entity.UserGamePostId;
+import com.swapper.monolith.ItemService.repository.UserGamePostRepository;
+import com.swapper.monolith.ItemService.specification.ListingSpecification;
+import com.swapper.monolith.exception.CustomExceptions.DuplicatedResourceException;
+import com.swapper.monolith.exception.CustomExceptions.ForbiddenException;
+import com.swapper.monolith.exception.CustomExceptions.InternalServerException;
+import com.swapper.monolith.exception.CustomExceptions.ResourceNotFoundException;
+import com.swapper.monolith.exception.enums.ApiResponses;
+import com.swapper.monolith.model.User;
+import com.swapper.monolith.repository.UserRepository;
+import com.swapper.monolith.service.UserDetailsImpl;
+import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.security.authentication.InsufficientAuthenticationException;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Service;
+
+import java.time.Instant;
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class ItemListingService {
+
+    private final UserGamePostRepository userGamePostRepository;
+    private final UserRepository userRepository;
+    private final GameService gameService;
+
+
+    @Transactional
+    public UserGamePostDto createListing(CreateListingRequest request) {
+        if (SecurityContextHolder.getContext().getAuthentication() == null) {
+            throw new InsufficientAuthenticationException("Cannot create listing without authentication");
+        }
+        UserDetailsImpl principal = (UserDetailsImpl) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        User user = userRepository.findByUserId(principal.getUserId())
+                .orElseThrow(() -> new InternalServerException("User not found"));
+
+        GameEntity game = gameService.getGameById(Long.parseLong(request.getGameId()));
+        UserGamePost userGamePost = persistListing(request, user, game);
+        return UserGamePostDto.from(userGamePost);
+    }
+
+    public UserGamePost persistListing(CreateListingRequest request, User user, GameEntity game) {
+        UserGamePost userGamePost = new UserGamePost();
+        userGamePost.setId(new UserGamePostId(user.getUserId(), game.getId(), getPlatform(request.getPlatform())));
+        userGamePost.setUser(user);
+        userGamePost.setGame(game);
+        userGamePost.setCondition(getCondition(request.getCondition()));
+        userGamePost.setItemStatus(ItemStatus.AVAILABLE);
+        userGamePost.setListingState(ListingState.ACTIVE);
+        userGamePost.setOfferTypes(request.getOfferTypes());
+        userGamePost.setPrice(request.getPrice());
+        try {
+            userGamePostRepository.save(userGamePost);
+        } catch (DataIntegrityViolationException e) {
+            throw new DuplicatedResourceException(ApiResponses.DUPLICATED_RESOURCE, "A similar Post already exists, please do not post the same things multiple times");
+        } catch (Exception e) {
+            throw new InternalServerException(e.getMessage());
+        }
+        return userGamePost;
+    }
+
+    public Page<UserGamePostDto> filterListings(ListingFilterRequest request) {
+        PageRequest pageable = PageRequest.of(request.getPage(), request.getSize());
+        return userGamePostRepository
+                .findAll(ListingSpecification.fromFilter(request), pageable)
+                .map(UserGamePostDto::from);
+    }
+
+    public UserGamePostDto getListingById(String listingId) {
+        UserGamePost listing = userGamePostRepository.findByListingId(listingId)
+                .orElseThrow(() -> new ResourceNotFoundException("Listing not found: " + listingId));
+        return UserGamePostDto.from(listing);
+    }
+
+    @Transactional
+    public UserGamePostDto updateListing(String listingId, UpdateListingRequest request, UserDetailsImpl principal) {
+        UserGamePost listing = userGamePostRepository.findByListingId(listingId)
+                .orElseThrow(() -> new ResourceNotFoundException("Listing not found: " + listingId));
+
+        if (!listing.getUser().getUserId().equals(principal.getUserId())) {
+            throw new ForbiddenException();
+        }
+
+        if (request.getCondition() != null) {
+            listing.setCondition(getCondition(request.getCondition()));
+        }
+        if (request.getPrice() != null) {
+            listing.setPrice(request.getPrice());
+            // TODO: call pricingService.recompute(listing) when pricing service exists
+        }
+        if (request.getOfferTypes() != null) {
+            listing.setOfferTypes(request.getOfferTypes());
+        }
+        if (request.getDescription() != null) {
+            listing.setDescription(request.getDescription());
+        }
+        if (request.getListingState() != null) {
+            listing.setListingState(request.getListingState());
+        }
+
+        return UserGamePostDto.from(userGamePostRepository.save(listing));
+    }
+
+    @Transactional
+    public void deleteListing(String listingId, UserDetailsImpl principal) {
+        UserGamePost listing = userGamePostRepository.findByListingId(listingId)
+                .orElseThrow(() -> new ResourceNotFoundException("Listing not found: " + listingId));
+
+        boolean isOwner = listing.getUser().getUserId().equals(principal.getUserId());
+        boolean isAdmin = principal.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ADMIN"));
+
+        if (!isOwner && !isAdmin) {
+            throw new ForbiddenException();
+        }
+
+        // TODO: check active transactions when Transaction entity exists
+        // throw new DuplicatedResourceException(ApiResponses.LISTING_ACTIVE_TRANSACTION) when found
+
+        listing.setDeletedAt(Instant.now());
+        userGamePostRepository.save(listing);
+    }
+
+    @Transactional
+    public UserGamePostDto setFeaturedPriority(String listingId, int priority) {
+        UserGamePost listing = userGamePostRepository.findByListingId(listingId)
+                .orElseThrow(() -> new ResourceNotFoundException("Listing not found: " + listingId));
+        listing.setFeaturedPriority(priority);
+        return UserGamePostDto.from(userGamePostRepository.save(listing));
+    }
+
+    private Condition getCondition(String condition) {
+        try {
+            return Condition.valueOf(condition);
+        } catch (IllegalArgumentException e) {
+            log.error("Invalid condition provided: {}", condition);
+        }
+        return Condition.ACCEPTABLE;
+    }
+
+    private Platform getPlatform(String platform) {
+        try {
+            return Platform.valueOf(platform);
+        } catch (IllegalArgumentException e) {
+            log.error("Invalid platform provided: {}", platform);
+        }
+        return Platform.UNKOWN;
+    }
+    public List<UserGamePostDto> getUserActiveTrades(String userId, ListingState listingState) {
+        return userGamePostRepository.findByUserIdAndListingState(userId,listingState).stream().map(UserGamePostDto::from).toList();
+    }
+}
