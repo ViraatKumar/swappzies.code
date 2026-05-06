@@ -1,0 +1,1093 @@
+{
+  "info": {
+    "_postman_id": "swapping-dudes-api-v1",
+    "name": "SwappingDudes API",
+    "description": "Full test collection for the SwappingDudes gaming marketplace backend. Run the Auth folder first to populate jwt_token.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:5001",
+      "type": "string"
+    },
+    {
+      "key": "jwt_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refresh_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "listing_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "reset_token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "description": "Authentication endpoints — run Register then Login to populate jwt_token.",
+      "item": [
+        {
+          "name": "Register",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"testuser\",\n  \"email\": \"testuser@example.com\",\n  \"password\": \"Password123!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/v1/user-register",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "v1", "user-register"]
+            }
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "var json = pm.response.json();",
+                  "",
+                  "if (json.jwt_token) {",
+                  "    pm.collectionVariables.set('jwt_token', json.jwt_token);",
+                  "    console.log('jwt_token saved:', json.jwt_token.substring(0, 30) + '...');",
+                  "}",
+                  "",
+                  "if (json.refresh_token) {",
+                  "    pm.collectionVariables.set('refresh_token', json.refresh_token);",
+                  "    console.log('refresh_token saved');",
+                  "}",
+                  "",
+                  "pm.test('jwt_token present', function () {",
+                  "    pm.expect(json.jwt_token).to.be.a('string').and.not.empty;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"testuser\",\n  \"password\": \"Password123!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/v1/user-login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "v1", "user-login"]
+            }
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "var json = pm.response.json();",
+                  "",
+                  "if (json.jwt_token) {",
+                  "    pm.collectionVariables.set('jwt_token', json.jwt_token);",
+                  "    console.log('jwt_token refreshed');",
+                  "}",
+                  "",
+                  "if (json.refresh_token) {",
+                  "    pm.collectionVariables.set('refresh_token', json.refresh_token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh_token\": \"{{refresh_token}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/v1/refresh-token",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "v1", "refresh-token"]
+            }
+          }
+        },
+        {
+          "name": "Logout",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 204', function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});",
+                  "",
+                  "// Clear tokens after logout",
+                  "pm.collectionVariables.set('jwt_token', '');",
+                  "pm.collectionVariables.set('refresh_token', '');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh_token\": \"{{refresh_token}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/v1/logout",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "v1", "logout"]
+            }
+          }
+        },
+        {
+          "name": "Check Username Availability",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Returns boolean', function () {",
+                  "    var body = pm.response.text();",
+                  "    pm.expect(body === 'true' || body === 'false').to.be.true;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/auth/v1/username-exists?username=testuser",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "v1", "username-exists"],
+              "query": [
+                { "key": "username", "value": "testuser" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Forgot Password",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"testuser@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/v1/forgot-password",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "v1", "forgot-password"]
+            }
+          }
+        },
+        {
+          "name": "Reset Password",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"{{reset_token}}\",\n  \"new_password\": \"NewPassword123!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/v1/reset-password",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "v1", "reset-password"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "User",
+      "description": "User profile endpoints — all require jwt_token.",
+      "item": [
+        {
+          "name": "Get User Details",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Has userId', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('user_id').that.is.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/user/v1/user-details",
+              "host": ["{{base_url}}"],
+              "path": ["user", "v1", "user-details"]
+            }
+          }
+        },
+        {
+          "name": "Get Public Profile",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Has username', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('username');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/user/v1/",
+              "host": ["{{base_url}}"],
+              "path": ["user", "v1", ""]
+            }
+          }
+        },
+        {
+          "name": "Update Profile",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Bio updated', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.bio).to.eql('Retro game collector and trader.');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"display_name\": \"Test User\",\n  \"bio\": \"Retro game collector and trader.\",\n  \"avatar_url\": \"https://example.com/avatar.png\",\n  \"lat\": 37.7749,\n  \"lng\": -122.4194\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/user/v1/profile",
+              "host": ["{{base_url}}"],
+              "path": ["user", "v1", "profile"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Games",
+      "description": "Game catalog search and filter endpoints.",
+      "item": [
+        {
+          "name": "Search Games by Name",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Returns array', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/games?gameName=Zelda",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "games"],
+              "query": [
+                { "key": "gameName", "value": "Zelda" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Search Games with Filters",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Paginated response', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('content');",
+                  "    pm.expect(json).to.have.property('total_elements');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Mario\",\n  \"genres\": [\"Platform\"],\n  \"platforms\": [\"NINTENDO_SWITCH\"],\n  \"min_rating\": 70.0,\n  \"max_rating\": 100.0,\n  \"page\": 0,\n  \"page_size\": 10,\n  \"sort_key\": \"rating\",\n  \"sort_direction\": \"DESC\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/games/search",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "games", "search"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Game Data",
+      "description": "Lookup endpoints for supported genres and platforms.",
+      "item": [
+        {
+          "name": "Get All Genres",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Has values array', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('values').that.is.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/data/genres",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "data", "genres"]
+            }
+          }
+        },
+        {
+          "name": "Get All Platforms",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Has values array', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('values').that.is.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/data/platforms",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "data", "platforms"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Listings",
+      "description": "Item listing CRUD. Create Listing saves listing_id for subsequent requests.",
+      "item": [
+        {
+          "name": "Create Listing",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 201 or 200', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "});",
+                  "",
+                  "var json = pm.response.json();",
+                  "",
+                  "// Handle both wrapped (ApiResponse) and unwrapped responses",
+                  "var listing = json.data || json;",
+                  "",
+                  "if (listing && listing.listing_id) {",
+                  "    pm.collectionVariables.set('listing_id', listing.listing_id);",
+                  "    console.log('listing_id saved:', listing.listing_id);",
+                  "}",
+                  "",
+                  "pm.test('Has listing_id', function () {",
+                  "    pm.expect(listing).to.have.property('listing_id');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"game_id\": \"1020\",\n  \"condition\": \"GOOD\",\n  \"platform\": \"NINTENDO_SWITCH\",\n  \"offer_types\": [\"SELL\", \"TRADE\"],\n  \"price\": 29.99\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/listings",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "listings"]
+            }
+          }
+        },
+        {
+          "name": "Get Listings (All)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Paginated response with content', function () {",
+                  "    var json = pm.response.json();",
+                  "    var data = json.data || json;",
+                  "    pm.expect(data).to.have.property('content');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/listings?page=0&size=20",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "listings"],
+              "query": [
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "20" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Listings — Filter by Platform",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/listings?platform_id=NINTENDO_SWITCH&page=0&size=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "listings"],
+              "query": [
+                { "key": "platform_id", "value": "NINTENDO_SWITCH" },
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Listings — Filter by Offer Type",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/listings?listing_type=TRADE&page=0&size=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "listings"],
+              "query": [
+                { "key": "listing_type", "value": "TRADE" },
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Listings — Filter by Price",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/listings?max_price=50.00&page=0&size=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "listings"],
+              "query": [
+                { "key": "max_price", "value": "50.00" },
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Listings — Filter by Location",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/listings?lat=37.7749&lng=-122.4194&radius_km=50&page=0&size=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "listings"],
+              "query": [
+                { "key": "lat", "value": "37.7749" },
+                { "key": "lng", "value": "-122.4194" },
+                { "key": "radius_km", "value": "50" },
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Listing by ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Listing ID matches', function () {",
+                  "    var json = pm.response.json();",
+                  "    var listing = json.data || json;",
+                  "    pm.expect(listing.listing_id).to.eql(pm.collectionVariables.get('listing_id'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/listings/{{listing_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "listings", "{{listing_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Listing",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Condition updated', function () {",
+                  "    var json = pm.response.json();",
+                  "    var listing = json.data || json;",
+                  "    pm.expect(listing.condition).to.eql('MINT');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"condition\": \"MINT\",\n  \"price\": 24.99,\n  \"offer_types\": [\"SELL\"],\n  \"description\": \"Like new, only opened once.\",\n  \"listing_state\": \"ACTIVE\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/listings/{{listing_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "listings", "{{listing_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Listing",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200 or 204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 204]);",
+                  "});",
+                  "",
+                  "// Clear listing_id after deletion",
+                  "pm.collectionVariables.set('listing_id', '');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/listings/{{listing_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "listings", "{{listing_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "description": "Admin-only endpoints — requires a user with ADMIN role. Set jwt_token to an admin token before running.",
+      "item": [
+        {
+          "name": "Set Featured Priority",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Featured priority set', function () {",
+                  "    var json = pm.response.json();",
+                  "    var listing = json.data || json;",
+                  "    pm.expect(listing.featured_priority).to.eql(1);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"priority\": 1\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/internal/listings/{{listing_id}}/featured",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "internal", "listings", "{{listing_id}}", "featured"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Error Cases",
+      "description": "Requests that should return specific error codes — validates error handling.",
+      "item": [
+        {
+          "name": "Login — Wrong Password",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 401', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"testuser\",\n  \"password\": \"wrongpassword\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/v1/user-login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "v1", "user-login"]
+            }
+          }
+        },
+        {
+          "name": "Register — Duplicate Username",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 409', function () {",
+                  "    pm.response.to.have.status(409);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"testuser\",\n  \"email\": \"other@example.com\",\n  \"password\": \"Password123!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/v1/user-register",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "v1", "user-register"]
+            }
+          }
+        },
+        {
+          "name": "Protected Endpoint — No Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 401 or 403', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([401, 403]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/user/v1/user-details",
+              "host": ["{{base_url}}"],
+              "path": ["user", "v1", "user-details"]
+            }
+          }
+        },
+        {
+          "name": "Get Listing — Not Found",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 404', function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/listings/00000000-0000-0000-0000-000000000000",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "listings", "00000000-0000-0000-0000-000000000000"]
+            }
+          }
+        },
+        {
+          "name": "Search Games — Name Too Short",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 400', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/games?gameName=ab",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "games"],
+              "query": [
+                { "key": "gameName", "value": "ab" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Listing — Missing Required Field",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 400', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"condition\": \"GOOD\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/listings",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "listings"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
