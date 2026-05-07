@@ -6,7 +6,6 @@ import com.swapper.monolith.model.User;
 import com.vladmihalcea.hibernate.type.json.JsonBinaryType;
 import jakarta.persistence.*;
 import org.hibernate.annotations.Type;
-import org.hibernate.annotations.UuidGenerator;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -25,18 +24,22 @@ import java.util.List;
 )
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class UserGamePost extends BaseModel {
-    @EmbeddedId
-    UserGamePostId id;
+    @Id
+    @Column(name = "listing_id", unique = true, nullable = false, updatable = false)
+    @GeneratedValue(strategy = GenerationType.UUID)
+    String listingId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @MapsId("userId")
     @JoinColumn(name = "user_id", nullable = false)
     User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @MapsId("gameId")
     @JoinColumn(name = "game_id", nullable = false)
     GameEntity game;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "platform", nullable = false)
+    Platform platform;
 
     @Enumerated(EnumType.STRING)
     Condition condition;
@@ -49,10 +52,6 @@ public class UserGamePost extends BaseModel {
     List<OfferType> offerTypes = new ArrayList<>();
 
     Double price;
-
-    @Column(name = "listing_id", unique = true, nullable = false, updatable = false)
-    @UuidGenerator
-    String listingId;
 
     @Column(columnDefinition = "TEXT")
     String description;

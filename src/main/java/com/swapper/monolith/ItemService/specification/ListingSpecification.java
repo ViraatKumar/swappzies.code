@@ -26,7 +26,7 @@ public class ListingSpecification {
 
             if (filter.getPlatformId() != null) {
                 try {
-                    Platform platform = Platform.valueOf(filter.getPlatformId());
+                    Platform platform = Platform.fromDisplayName(filter.getPlatformId());
                     predicates.add(cb.equal(root.get("id").get("platform"), platform));
                 } catch (IllegalArgumentException ignored) {}
             }

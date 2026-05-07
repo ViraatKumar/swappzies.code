@@ -2,6 +2,10 @@ package com.swapper.monolith.ItemService.constants;
 
 import lombok.Getter;
 
+import java.util.Arrays;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 @Getter
 public enum Platform {
     EPOCH_SUPER_CASSETTE_VISION("Epoch Super Cassette Vision"),
@@ -231,6 +235,17 @@ public enum Platform {
 
     Platform(String displayName) {
         this.displayName = displayName;
+    }
+
+    private static final Map<String, Platform> BY_DISPLAY_NAME = Arrays.stream(values())
+            .collect(Collectors.toMap(p -> p.displayName.toLowerCase(), p -> p));
+
+    public static Platform fromDisplayName(String name) {
+        Platform result = BY_DISPLAY_NAME.get(name.toLowerCase());
+        if (result == null) {
+            throw new IllegalArgumentException("Unknown platform: " + name);
+        }
+        return result;
     }
 
 }

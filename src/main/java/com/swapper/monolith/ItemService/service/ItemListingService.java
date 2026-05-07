@@ -10,7 +10,6 @@ import com.swapper.monolith.ItemService.dto.UserGamePost.UpdateListingRequest;
 import com.swapper.monolith.ItemService.dto.UserGamePost.UserGamePostDto;
 import com.swapper.monolith.ItemService.entity.GameEntity;
 import com.swapper.monolith.ItemService.entity.UserGamePost;
-import com.swapper.monolith.ItemService.entity.UserGamePostId;
 import com.swapper.monolith.ItemService.repository.UserGamePostRepository;
 import com.swapper.monolith.ItemService.specification.ListingSpecification;
 import com.swapper.monolith.exception.CustomExceptions.DuplicatedResourceException;
@@ -55,28 +54,32 @@ public class ItemListingService {
                 .orElseThrow(() -> new InternalServerException("User not found"));
 
         GameEntity game = gameService.getGameById(Long.parseLong(request.getGameId()));
+        Platform platform = getPlatform(request.getPlatform());
+        UserGamePost duplicatedPost = userGamePostRepository.findActiveByUserGamePlatform(user.getUserId(),game.getId(),platform).orElse(null);
+        if (duplicatedPost != null) {
+            throw new DuplicatedResourceException(ApiResponses.DUPLICATED_RESOURCE);
+        }
         UserGamePost userGamePost = persistListing(request, user, game);
         return UserGamePostDto.from(userGamePost);
     }
 
     public UserGamePost persistListing(CreateListingRequest request, User user, GameEntity game) {
         UserGamePost userGamePost = new UserGamePost();
-        userGamePost.setId(new UserGamePostId(user.getUserId(), game.getId(), getPlatform(request.getPlatform())));
         userGamePost.setUser(user);
         userGamePost.setGame(game);
+        userGamePost.setPlatform(getPlatform(request.getPlatform()));
         userGamePost.setCondition(getCondition(request.getCondition()));
         userGamePost.setItemStatus(ItemStatus.AVAILABLE);
         userGamePost.setListingState(ListingState.ACTIVE);
         userGamePost.setOfferTypes(request.getOfferTypes());
         userGamePost.setPrice(request.getPrice());
         try {
-            userGamePostRepository.save(userGamePost);
+            return userGamePostRepository.save(userGamePost);
         } catch (DataIntegrityViolationException e) {
             throw new DuplicatedResourceException(ApiResponses.DUPLICATED_RESOURCE, "A similar Post already exists, please do not post the same things multiple times");
         } catch (Exception e) {
             throw new InternalServerException(e.getMessage());
         }
-        return userGamePost;
     }
 
     public Page<UserGamePostDto> filterListings(ListingFilterRequest request) {
@@ -153,18 +156,16 @@ public class ItemListingService {
         try {
             return Condition.valueOf(condition);
         } catch (IllegalArgumentException e) {
-            log.error("Invalid condition provided: {}", condition);
+            throw new ResourceNotFoundException("Invalid condition: " + condition);
         }
-        return Condition.ACCEPTABLE;
     }
 
     private Platform getPlatform(String platform) {
         try {
-            return Platform.valueOf(platform);
+            return Platform.fromDisplayName(platform);
         } catch (IllegalArgumentException e) {
-            log.error("Invalid platform provided: {}", platform);
+            throw new ResourceNotFoundException("Invalid platform: " + platform);
         }
-        return Platform.UNKOWN;
     }
     public List<UserGamePostDto> getUserActiveTrades(String userId, ListingState listingState) {
         return userGamePostRepository.findByUserIdAndListingState(userId,listingState).stream().map(UserGamePostDto::from).toList();

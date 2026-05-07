@@ -41,6 +41,7 @@ public class UserGamePostDto {
         GameDto game = gameMapper.toDto(userGamePost.getGame());
         UserDTO user = UserDTO.from(userGamePost.getUser());
         return UserGamePostDto.builder()
+                .listingId(userGamePost.getListingId())
                 .user(user)
                 .game(game)
                 .listingId(userGamePost.getListingId())
@@ -48,7 +49,7 @@ public class UserGamePostDto {
                 .gameName(game.getName())
                 .postDate(userGamePost.getCreatedDate())
                 .coverUrl(game.getUrl())
-                .platform(userGamePost.getId().getPlatform())
+                .platform(userGamePost.getPlatform())
                 .condition(userGamePost.getCondition())
                 .itemStatus(userGamePost.getItemStatus())
                 .offerTypes(userGamePost.getOfferTypes())
