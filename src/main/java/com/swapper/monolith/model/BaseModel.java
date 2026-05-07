@@ -21,6 +21,5 @@ public abstract class BaseModel {
     private Date lastModifiedDate;
 
     @Version
-    @Column(nullable=false)
     Long version;
 }
