@@ -136,7 +136,7 @@ public class UserService  {
     private PublicUserProfileResponse createPublicUserProfileResponse(User user) {
         String activeListingCount = "N/A";
         try {
-            activeListingCount = String.valueOf(itemListingService.getUserActiveTrades(user.getUserId(), ListingState.ACTIVE).size());
+            activeListingCount = String.valueOf(itemListingService.getUserActiveTrades(user.getUserId(), ListingState.ACTIVE));
         }
         catch(Exception exception){
             logger.error(exception.getMessage());
@@ -169,4 +169,7 @@ public class UserService  {
         return duration.getSeconds() + " seconds ago";
     }
 
+    public UserDTO findUserById(String userId){
+        return UserDTO.from(userRepository.findByUserId(userId).orElseThrow(()-> new UsernameNotFoundException("User not found: " + userId)));
+    }
 }
