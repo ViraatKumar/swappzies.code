@@ -57,4 +57,7 @@ public class PlatformEntity {
     @Type(JsonBinaryType.class)
     @Column(columnDefinition = "jsonb")
     List<Long> websites;
+
+    @Column(name = "enabled")
+    boolean enabled = false;
 }

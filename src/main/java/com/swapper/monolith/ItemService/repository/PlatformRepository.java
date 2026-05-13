@@ -12,7 +12,7 @@ import java.util.List;
 @Repository
 public interface PlatformRepository extends JpaRepository<PlatformEntity, Long> {
     List<PlatformEntity> findAllByNameIn(List<String> names);
-    @Query(value = "SELECT DISTINCT(name) FROM platform",nativeQuery = true)
+    @Query(value = "SELECT DISTINCT(name) FROM platform where enabled=true",nativeQuery = true)
     List<String> findDistinctNames();
 
     List<PlatformEntity> findAllByIdIn(Collection<Long> ids);

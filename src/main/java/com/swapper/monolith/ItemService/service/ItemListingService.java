@@ -20,12 +20,14 @@ import com.swapper.monolith.exception.enums.ApiResponses;
 import com.swapper.monolith.model.User;
 import com.swapper.monolith.repository.UserRepository;
 import com.swapper.monolith.service.UserDetailsImpl;
+import com.swapper.monolith.service.UserService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.authentication.InsufficientAuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -151,6 +153,10 @@ public class ItemListingService {
         listing.setFeaturedPriority(priority);
         return UserGamePostDto.from(userGamePostRepository.save(listing));
     }
+    public Page<UserGamePostDto> getUserActiveGamePosts(UserDetailsImpl userDetailsImpl) {
+        Pageable page = Pageable.ofSize(10);
+        return userGamePostRepository.findByUserIdAndListingState(userDetailsImpl.getUserId(), ListingState.ACTIVE, page).map(UserGamePostDto::from);
+    }
 
     private Condition getCondition(String condition) {
         try {
@@ -167,7 +173,7 @@ public class ItemListingService {
             throw new ResourceNotFoundException("Invalid platform: " + platform);
         }
     }
-    public List<UserGamePostDto> getUserActiveTrades(String userId, ListingState listingState) {
-        return userGamePostRepository.findByUserIdAndListingState(userId,listingState).stream().map(UserGamePostDto::from).toList();
+    public Long getUserActiveTrades(String userId, ListingState listingState) {
+        return userGamePostRepository.countByUserIdAndListingState(userId,listingState);
     }
 }
