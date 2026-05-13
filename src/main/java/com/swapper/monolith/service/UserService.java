@@ -169,7 +169,7 @@ public class UserService  {
         return duration.getSeconds() + " seconds ago";
     }
 
-    public UserDTO findUserById(String userId){
-        return UserDTO.from(userRepository.findByUserId(userId).orElseThrow(()-> new UsernameNotFoundException("User not found: " + userId)));
+    public User findUserById(String userId){
+        return userRepository.findByUserId(userId).orElseThrow(()-> new UsernameNotFoundException("User not found: " + userId));
     }
 }

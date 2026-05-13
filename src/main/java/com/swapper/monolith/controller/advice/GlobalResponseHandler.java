@@ -42,7 +42,6 @@ public class GlobalResponseHandler implements ResponseBodyAdvice<Object> {
                 return body;
             }
         }
-
         return ApiResponse.success(body);
     }
 }

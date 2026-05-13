@@ -18,6 +18,7 @@ public enum ApiResponses {
     PASSWORD_RESET_TOKEN_INVALID(HttpStatus.UNAUTHORIZED, "Invalid password reset token"),
     LISTING_ACTIVE_TRANSACTION(HttpStatus.CONFLICT, "Cannot delete a listing with an active transaction in progress"),
     FORBIDDEN(HttpStatus.FORBIDDEN, "You do not have permission to perform this action"),
+    WISHLIST_GAME_ALREADY_EXISTS(HttpStatus.CONFLICT, "This game is already in your wishlist"),
     ;
     HttpStatus httpStatus;
     String message;
