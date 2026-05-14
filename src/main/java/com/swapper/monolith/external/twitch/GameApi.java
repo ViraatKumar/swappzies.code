@@ -1,5 +1,6 @@
 package com.swapper.monolith.external.twitch;
 
+import com.swapper.monolith.ItemService.dto.CoverDto;
 import com.swapper.monolith.ItemService.dto.GameDto;
 import com.swapper.monolith.ItemService.dto.GameSearchResponse;
 import com.swapper.monolith.ItemService.mapper.GameMapper;
@@ -98,6 +99,12 @@ public class GameApi {
                 .stream()
                 .map(GenreMapper::toDto)
                 .toList();
+    }
+
+    public List<CoverDto> searchCoversByIds(List<Long> coverIds) {
+        String idsStr = coverIds.stream().map(String::valueOf).collect(Collectors.joining(","));
+        String body = "fields alpha_channel,animated,checksum,game,game_localization,height,image_id,url,width,id; where id = (" + idsStr + ");";
+        return List.of(searchFromIGDB("https://api.igdb.com/v4/covers", HttpMethod.POST, body, CoverDto[].class));
     }
 
     public <REQ,RES> RES searchFromIGDB(String url,

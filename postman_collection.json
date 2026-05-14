@@ -30,6 +30,21 @@
       "key": "reset_token",
       "value": "",
       "type": "string"
+    },
+    {
+      "key": "trade_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "rental_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "wishlist_item_id",
+      "value": "",
+      "type": "string"
     }
   ],
   "item": [
@@ -859,6 +874,530 @@
               "raw": "{{base_url}}/api/v1/listings/{{listing_id}}",
               "host": ["{{base_url}}"],
               "path": ["api", "v1", "listings", "{{listing_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Wishlist",
+      "description": "Wishlist endpoints — all require jwt_token.",
+      "item": [
+        {
+          "name": "Get Wishlist",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Returns array', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/v1/wishlist",
+              "host": ["{{base_url}}"],
+              "path": ["v1", "wishlist"]
+            }
+          }
+        },
+        {
+          "name": "Add to Wishlist",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "var json = pm.response.json();",
+                  "",
+                  "if (json && json.wishlist_item_id) {",
+                  "    pm.collectionVariables.set('wishlist_item_id', json.wishlist_item_id);",
+                  "    console.log('wishlist_item_id saved:', json.wishlist_item_id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"game_id\": \"1020\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/v1/wishlist",
+              "host": ["{{base_url}}"],
+              "path": ["v1", "wishlist"]
+            }
+          }
+        },
+        {
+          "name": "Remove from Wishlist",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 204', function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});",
+                  "",
+                  "pm.collectionVariables.set('wishlist_item_id', '');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/v1/wishlist/{{wishlist_item_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["v1", "wishlist", "{{wishlist_item_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Trades",
+      "description": "Trade lifecycle endpoints — all require jwt_token. Initiate Trade saves trade_id.",
+      "item": [
+        {
+          "name": "Initiate Trade",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "var json = pm.response.json();",
+                  "",
+                  "if (json && json.trade_id) {",
+                  "    pm.collectionVariables.set('trade_id', json.trade_id);",
+                  "    console.log('trade_id saved:', json.trade_id);",
+                  "}",
+                  "",
+                  "pm.test('Has trade_id', function () {",
+                  "    pm.expect(json).to.have.property('trade_id');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"offered_listing_id\": \"{{listing_id}}\",\n  \"requested_listing_id\": \"\",\n  \"notes\": \"Happy to trade!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/trades/v1",
+              "host": ["{{base_url}}"],
+              "path": ["trades", "v1"]
+            }
+          }
+        },
+        {
+          "name": "Get Trades for User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Returns array', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/trades/v1",
+              "host": ["{{base_url}}"],
+              "path": ["trades", "v1"]
+            }
+          }
+        },
+        {
+          "name": "Get Trade by ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Trade ID matches', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.trade_id).to.eql(pm.collectionVariables.get('trade_id'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/trades/v1/{{trade_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["trades", "v1", "{{trade_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Accept Trade",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Status is ACCEPTED', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.status).to.eql('ACCEPTED');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/trades/v1/{{trade_id}}/accept",
+              "host": ["{{base_url}}"],
+              "path": ["trades", "v1", "{{trade_id}}", "accept"]
+            }
+          }
+        },
+        {
+          "name": "Decline Trade",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Status is DECLINED', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.status).to.eql('DECLINED');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/trades/v1/{{trade_id}}/decline",
+              "host": ["{{base_url}}"],
+              "path": ["trades", "v1", "{{trade_id}}", "decline"]
+            }
+          }
+        },
+        {
+          "name": "Complete Trade",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Status is COMPLETED', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.status).to.eql('COMPLETED');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/trades/v1/{{trade_id}}/complete",
+              "host": ["{{base_url}}"],
+              "path": ["trades", "v1", "{{trade_id}}", "complete"]
+            }
+          }
+        },
+        {
+          "name": "Cancel Trade",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Status is CANCELLED', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.status).to.eql('CANCELLED');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/trades/v1/{{trade_id}}/cancel",
+              "host": ["{{base_url}}"],
+              "path": ["trades", "v1", "{{trade_id}}", "cancel"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Rentals",
+      "description": "Rental lifecycle endpoints — all require jwt_token. Initiate Rental saves rental_id.",
+      "item": [
+        {
+          "name": "Initiate Rental",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "var json = pm.response.json();",
+                  "",
+                  "if (json && json.rental_id) {",
+                  "    pm.collectionVariables.set('rental_id', json.rental_id);",
+                  "    console.log('rental_id saved:', json.rental_id);",
+                  "}",
+                  "",
+                  "pm.test('Has rental_id', function () {",
+                  "    pm.expect(json).to.have.property('rental_id');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"listing_id\": \"{{listing_id}}\",\n  \"rental_start_date\": \"2026-06-01T00:00:00Z\",\n  \"rental_end_date\": \"2026-06-14T00:00:00Z\",\n  \"notes\": \"Will take good care of it.\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/rentals/v1",
+              "host": ["{{base_url}}"],
+              "path": ["rentals", "v1"]
+            }
+          }
+        },
+        {
+          "name": "Get Rentals for User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Returns array', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/rentals/v1",
+              "host": ["{{base_url}}"],
+              "path": ["rentals", "v1"]
+            }
+          }
+        },
+        {
+          "name": "Accept Rental",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Status is ACTIVE', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.status).to.eql('ACTIVE');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/rentals/v1/{{rental_id}}/accept",
+              "host": ["{{base_url}}"],
+              "path": ["rentals", "v1", "{{rental_id}}", "accept"]
+            }
+          }
+        },
+        {
+          "name": "Cancel Rental",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Status is CANCELLED', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.status).to.eql('CANCELLED');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/rentals/v1/{{rental_id}}/cancel",
+              "host": ["{{base_url}}"],
+              "path": ["rentals", "v1", "{{rental_id}}", "cancel"]
+            }
+          }
+        },
+        {
+          "name": "Mark Returned",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Status is RETURNED', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.status).to.eql('RETURNED');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/rentals/v1/{{rental_id}}/return",
+              "host": ["{{base_url}}"],
+              "path": ["rentals", "v1", "{{rental_id}}", "return"]
             }
           }
         }

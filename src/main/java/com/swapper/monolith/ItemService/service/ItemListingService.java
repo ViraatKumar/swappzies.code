@@ -176,4 +176,25 @@ public class ItemListingService {
     public Long getUserActiveTrades(String userId, ListingState listingState) {
         return userGamePostRepository.countByUserIdAndListingState(userId,listingState);
     }
+
+    @Transactional
+    public void updateListingItemStatus(String listingId, ItemStatus itemStatus) {
+        UserGamePost listing = userGamePostRepository.findByListingId(listingId)
+                .orElseThrow(() -> new ResourceNotFoundException("Listing not found: " + listingId));
+        listing.setItemStatus(itemStatus);
+        userGamePostRepository.save(listing);
+    }
+
+    @Transactional
+    public void updateListingState(String listingId, ListingState listingState) {
+        UserGamePost listing = userGamePostRepository.findByListingId(listingId)
+                .orElseThrow(() -> new ResourceNotFoundException("Listing not found: " + listingId));
+        listing.setListingState(listingState);
+        userGamePostRepository.save(listing);
+    }
+
+    public UserGamePost getListingEntityById(String listingId) {
+        return userGamePostRepository.findByListingId(listingId)
+                .orElseThrow(() -> new ResourceNotFoundException("Listing not found: " + listingId));
+    }
 }
