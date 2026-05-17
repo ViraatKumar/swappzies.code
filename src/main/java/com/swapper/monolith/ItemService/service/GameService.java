@@ -2,6 +2,7 @@ package com.swapper.monolith.ItemService.service;
 
 import com.swapper.monolith.ItemService.dto.FilterGames.GameResponse;
 import com.swapper.monolith.ItemService.dto.*;
+import com.swapper.monolith.ItemService.repository.CoverRepository;
 import com.swapper.monolith.ItemService.specification.GameSpecification;
 import com.swapper.monolith.ItemService.entity.GameEntity;
 import com.swapper.monolith.ItemService.mapper.GameMapper;
@@ -16,6 +17,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.*;
 import org.springframework.security.authentication.InsufficientAuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -37,7 +39,7 @@ public class GameService {
     private final Set<String> VALID_SORT_KEYS = Set.of("name");
     private final Set<Sort.Direction> VALID_SORT_DIRECTIONS = Set.of(Sort.Direction.ASC, Sort.Direction.DESC);
 
-    public GameService(GameApi gameApi, GameRepository gameRepository, GameMapper gameMapper, IngestionService ingestionService, GenreService genreService, PlatformService platformService, CoverService coverService) {
+    public GameService(GameApi gameApi, GameRepository gameRepository, GameMapper gameMapper, IngestionService ingestionService, GenreService genreService, PlatformService platformService, @Lazy CoverService coverService) {
         this.gameApi = gameApi;
         this.gameRepository = gameRepository;
         this.gameMapper = gameMapper;
@@ -180,7 +182,7 @@ public class GameService {
                 .distinct()
                 .toList();
         if (coverIds.isEmpty()) return Collections.emptyMap();
-        return coverService.getCoverUrls(coverIds).stream()
+        return coverService.getCoversByIds(coverIds).stream()
                 .filter(c -> c.getUrl() != null)
                 .collect(Collectors.toMap(CoverDto::getId, CoverDto::getUrl));
     }
@@ -197,7 +199,7 @@ public class GameService {
         return gameResponse;
     }
 
-    public List<GameEntity> getGameEntites(List<Long> gameIds) {
+    public List<GameEntity> getGamesByIds(List<Long> gameIds) {
         return gameRepository.findAllById(gameIds);
     }
 

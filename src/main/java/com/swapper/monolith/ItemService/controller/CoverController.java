@@ -1,19 +1,24 @@
 package com.swapper.monolith.ItemService.controller;
 
+import com.swapper.monolith.ItemService.dto.CoverDto;
+import com.swapper.monolith.ItemService.dto.CoverRequest;
 import com.swapper.monolith.ItemService.service.CoverService;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
-@RequestMapping("/v1/cover")
+@RequestMapping("/api/v1/cover")
+@RequiredArgsConstructor
 public class CoverController {
 
-    CoverService coverService;
-//    @GetMapping
-//    public ResponseEntity<String> getCoverUrl(@RequestParam String gameId){
-//        return coverService.getCoverUrls()
-//    }
+    final CoverService coverService;
+    @GetMapping
+    public ResponseEntity<List<CoverDto>> getCoverUrl(@RequestBody @Valid CoverRequest coverRequest) {
+        return ResponseEntity.ok(coverService.getCoverUrls(coverRequest));
+    }
 }
