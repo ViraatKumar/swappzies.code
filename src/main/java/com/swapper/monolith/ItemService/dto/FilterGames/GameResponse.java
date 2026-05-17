@@ -14,4 +14,5 @@ public class GameResponse {
     String name;
     List<String> platform;
     List<String> genre;
+    String coverUrl;
 }

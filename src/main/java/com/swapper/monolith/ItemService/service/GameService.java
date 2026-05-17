@@ -2,6 +2,7 @@ package com.swapper.monolith.ItemService.service;
 
 import com.swapper.monolith.ItemService.dto.FilterGames.GameResponse;
 import com.swapper.monolith.ItemService.dto.*;
+import com.swapper.monolith.ItemService.repository.CoverRepository;
 import com.swapper.monolith.ItemService.specification.GameSpecification;
 import com.swapper.monolith.ItemService.entity.GameEntity;
 import com.swapper.monolith.ItemService.mapper.GameMapper;
@@ -16,9 +17,11 @@ import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.*;
 import org.springframework.security.authentication.InsufficientAuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -32,20 +35,22 @@ public class GameService {
     private final GameMapper gameMapper;
     private final int DB_RESULT_STRENGTH = 10;
     private final IngestionService ingestionService;
+    private final CoverService coverService;
     private final Set<String> VALID_SORT_KEYS = Set.of("name");
     private final Set<Sort.Direction> VALID_SORT_DIRECTIONS = Set.of(Sort.Direction.ASC, Sort.Direction.DESC);
 
-    public GameService(GameApi gameApi, GameRepository gameRepository, GameMapper gameMapper, IngestionService ingestionService, GenreService genreService, PlatformService platformService) {
+    public GameService(GameApi gameApi, GameRepository gameRepository, GameMapper gameMapper, IngestionService ingestionService, GenreService genreService, PlatformService platformService, @Lazy CoverService coverService) {
         this.gameApi = gameApi;
         this.gameRepository = gameRepository;
         this.gameMapper = gameMapper;
         this.ingestionService = ingestionService;
         this.genreService = genreService;
         this.platformService = platformService;
+        this.coverService = coverService;
     }
 
     /*
-    Step 1: Search DB first - if respsonse is weak then search API as well
+    Step 1: Search DB first - if response is weak then search API as well
     Step 2: Combine the responses by unique ID's and return
     Step 3: in an async operation - populate DB with ID's it did not have before
      */
@@ -55,7 +60,8 @@ public class GameService {
         Page<GameEntity> gameEntities = gameRepository.findGamesOfSimilarName(gameName,pageable);
         GameSearchResponse gameSearchResponse = new GameSearchResponse(gameEntities.stream().map(gameMapper::toDto).toList());
         if(isResponseStrong(gameSearchResponse)){
-            return gameSearchResponse.getGameDtoList().stream().map(this::create).toList();
+            Map<Long, String> coverUrlMap = buildCoverUrlMap(gameSearchResponse.getGameDtoList());
+            return gameSearchResponse.getGameDtoList().stream().map(dto -> create(dto, coverUrlMap)).toList();
         }
         logger.warn("Weak response from DB - Searching API");
 
@@ -72,7 +78,8 @@ public class GameService {
                 gameRepository::saveAll
         );
 
-        return twitchResponse.getGameDtoList().stream().map(this::create).toList();
+        Map<Long, String> coverUrlMap = buildCoverUrlMap(twitchResponse.getGameDtoList());
+        return twitchResponse.getGameDtoList().stream().map(dto -> create(dto, coverUrlMap)).toList();
     }
 
     public Page<GameResponse> searchGames(GameFilterRequest filter) {
@@ -82,12 +89,11 @@ public class GameService {
         GameProcessedFilters gameProcessedFilters = getProcessedFilters(filter);
         Pageable pageable = PageRequest.of(gameProcessedFilters.getPageNo(), gameProcessedFilters.getPageSize(), gameProcessedFilters.getSort());
 
-        Page<GameResponse> dbResults = gameRepository.findAll(GameSpecification.fromFilter(gameProcessedFilters), pageable)
-                .map(gameMapper::toDto)
-                .map(this::create);
+        Page<GameDto> dbDtoPage = gameRepository.findAll(GameSpecification.fromFilter(gameProcessedFilters), pageable)
+                .map(gameMapper::toDto);
 
         String name = gameProcessedFilters.getName();
-        if (name != null && !name.isBlank() && dbResults.getTotalElements() < DB_RESULT_STRENGTH) {
+        if (name != null && !name.isBlank() && dbDtoPage.getTotalElements() < DB_RESULT_STRENGTH) {
             logger.warn("Weak DB response for name '{}' in searchGames - falling back to IGDB", name);
 
             GameSearchResponse igdbResponse = gameApi.searchByGameName(name);
@@ -100,11 +106,14 @@ public class GameService {
                     gameRepository::saveAll
             );
 
+            Map<Long, String> coverUrlMap = buildCoverUrlMap(igdbResponse.getGameDtoList());
             List<GameResponse> igdbMapped = igdbResponse.getGameDtoList().stream()
-                    .map(this::create).toList();
+                    .map(dto -> create(dto, coverUrlMap)).toList();
             return new PageImpl<>(igdbMapped, pageable, igdbMapped.size());
         }
-        return dbResults;
+
+        Map<Long, String> coverUrlMap = buildCoverUrlMap(dbDtoPage.getContent());
+        return dbDtoPage.map(dto -> create(dto, coverUrlMap));
     }
 
     public GameEntity getGameById(long id) {
@@ -166,13 +175,32 @@ public class GameService {
     }
 
 
-    private GameResponse create(GameDto gameDto) {
+    private Map<Long, String> buildCoverUrlMap(List<GameDto> dtos) {
+        List<Long> coverIds = dtos.stream()
+                .map(GameDto::getCover)
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+        if (coverIds.isEmpty()) return Collections.emptyMap();
+        return coverService.getCoversByIds(coverIds).stream()
+                .filter(c -> c.getUrl() != null)
+                .collect(Collectors.toMap(CoverDto::getId, CoverDto::getUrl));
+    }
 
+    private GameResponse create(GameDto gameDto, Map<Long, String> coverUrlMap) {
         GameResponse gameResponse = new GameResponse();
         gameResponse.setId(gameDto.getId());
         gameResponse.setName(gameDto.getName());
         gameResponse.setPlatform(platformService.getPlatformFromIds(gameDto.getPlatforms()));
         gameResponse.setGenre(genreService.getGenresByIds(gameDto.getGenres()));
+        if (gameDto.getCover() != null) {
+            gameResponse.setCoverUrl(coverUrlMap.get(gameDto.getCover()));
+        }
         return gameResponse;
     }
+
+    public List<GameEntity> getGamesByIds(List<Long> gameIds) {
+        return gameRepository.findAllById(gameIds);
+    }
+
 }

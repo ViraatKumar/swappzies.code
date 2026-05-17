@@ -48,7 +48,7 @@ public class UserGamePostDto {
                 .username(user.getUsername())
                 .gameName(game.getName())
                 .postDate(userGamePost.getCreatedDate())
-                .coverUrl(game.getUrl())
+                .coverUrl(null)
                 .platform(userGamePost.getPlatform())
                 .condition(userGamePost.getCondition())
                 .itemStatus(userGamePost.getItemStatus())

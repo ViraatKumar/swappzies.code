@@ -19,6 +19,14 @@ public enum ApiResponses {
     LISTING_ACTIVE_TRANSACTION(HttpStatus.CONFLICT, "Cannot delete a listing with an active transaction in progress"),
     FORBIDDEN(HttpStatus.FORBIDDEN, "You do not have permission to perform this action"),
     WISHLIST_GAME_ALREADY_EXISTS(HttpStatus.CONFLICT, "This game is already in your wishlist"),
+    TRADE_NOT_FOUND(HttpStatus.NOT_FOUND, "Trade not found"),
+    RENTAL_NOT_FOUND(HttpStatus.NOT_FOUND, "Rental not found"),
+    TRADE_LISTING_NOT_TRADEABLE(HttpStatus.BAD_REQUEST, "Listing is not available for trading"),
+    RENTAL_LISTING_NOT_RENTABLE(HttpStatus.BAD_REQUEST, "Listing is not available for renting"),
+    TRADE_DUPLICATE(HttpStatus.CONFLICT, "A pending trade already exists for these listings"),
+    TRADE_CANNOT_TRADE_OWN_LISTING(HttpStatus.BAD_REQUEST, "You cannot trade with yourself"),
+    TRADE_INVALID_STATUS_TRANSITION(HttpStatus.CONFLICT, "Trade cannot be updated in its current state"),
+    RENTAL_INVALID_STATUS_TRANSITION(HttpStatus.CONFLICT, "Rental cannot be updated in its current state"),
     ;
     HttpStatus httpStatus;
     String message;
