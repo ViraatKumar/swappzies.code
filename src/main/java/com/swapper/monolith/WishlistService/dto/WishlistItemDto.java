@@ -15,12 +15,12 @@ public class WishlistItemDto {
     String gameName;
     String coverUrl;
     Date addedAt;
-    public static WishlistItemDto from(WishlistItem item) {
+    public static WishlistItemDto from(WishlistItem item, String coverUrl) {
         return WishlistItemDto.builder()
                 .wishlistItemId(item.getWishlistItemId())
                 .gameId(item.getGame().getId())
                 .gameName(item.getGame().getName())
-                .coverUrl(item.getGame().getUrl())
+                .coverUrl(coverUrl)
                 .addedAt(item.getCreatedDate())
                 .build();
     }
