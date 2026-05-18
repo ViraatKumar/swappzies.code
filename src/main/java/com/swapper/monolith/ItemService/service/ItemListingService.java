@@ -20,12 +20,12 @@ import com.swapper.monolith.exception.enums.ApiResponses;
 import com.swapper.monolith.model.User;
 import com.swapper.monolith.repository.UserRepository;
 import com.swapper.monolith.service.UserDetailsImpl;
-import com.swapper.monolith.service.UserService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.authentication.InsufficientAuthenticationException;
@@ -33,8 +33,10 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Map;
+import java.util.Objects;
 
 @Slf4j
 @Service
@@ -44,6 +46,7 @@ public class ItemListingService {
     private final UserGamePostRepository userGamePostRepository;
     private final UserRepository userRepository;
     private final GameService gameService;
+    private final CoverService coverService;
 
 
     @Transactional
@@ -62,7 +65,7 @@ public class ItemListingService {
             throw new DuplicatedResourceException(ApiResponses.DUPLICATED_RESOURCE);
         }
         UserGamePost userGamePost = persistListing(request, user, game);
-        return UserGamePostDto.from(userGamePost);
+        return toDto(userGamePost);
     }
 
     public UserGamePost persistListing(CreateListingRequest request, User user, GameEntity game) {
@@ -86,15 +89,14 @@ public class ItemListingService {
 
     public Page<UserGamePostDto> filterListings(ListingFilterRequest request) {
         PageRequest pageable = PageRequest.of(request.getPage(), request.getSize());
-        return userGamePostRepository
-                .findAll(ListingSpecification.fromFilter(request), pageable)
-                .map(UserGamePostDto::from);
+        Page<UserGamePost> page = userGamePostRepository.findAll(ListingSpecification.fromFilter(request), pageable);
+        return toDtoPage(page);
     }
 
     public UserGamePostDto getListingById(String listingId) {
         UserGamePost listing = userGamePostRepository.findByListingId(listingId)
                 .orElseThrow(() -> new ResourceNotFoundException("Listing not found: " + listingId));
-        return UserGamePostDto.from(listing);
+        return toDto(listing);
     }
 
     @Transactional
@@ -123,7 +125,7 @@ public class ItemListingService {
             listing.setListingState(request.getListingState());
         }
 
-        return UserGamePostDto.from(userGamePostRepository.save(listing));
+        return toDto(userGamePostRepository.save(listing));
     }
 
     @Transactional
@@ -151,11 +153,45 @@ public class ItemListingService {
         UserGamePost listing = userGamePostRepository.findByListingId(listingId)
                 .orElseThrow(() -> new ResourceNotFoundException("Listing not found: " + listingId));
         listing.setFeaturedPriority(priority);
-        return UserGamePostDto.from(userGamePostRepository.save(listing));
+        return toDto(userGamePostRepository.save(listing));
     }
     public Page<UserGamePostDto> getUserActiveGamePosts(UserDetailsImpl userDetailsImpl) {
         Pageable page = Pageable.ofSize(10);
-        return userGamePostRepository.findByUserIdAndListingState(userDetailsImpl.getUserId(), ListingState.ACTIVE, page).map(UserGamePostDto::from);
+        Page<UserGamePost> result = userGamePostRepository.findByUserIdAndListingState(userDetailsImpl.getUserId(), ListingState.ACTIVE, page);
+        return toDtoPage(result);
+    }
+
+    private UserGamePostDto toDto(UserGamePost listing) {
+        Long coverId = listing.getGame().getCover();
+        String coverUrl = null;
+        if (coverId != null) {
+            coverUrl = coverService.getCoversByIds(List.of(coverId)).stream()
+                    .findFirst()
+                    .map(dto -> dto.getUrl())
+                    .orElse(null);
+        }
+        return UserGamePostDto.from(listing, coverUrl);
+    }
+
+    private Page<UserGamePostDto> toDtoPage(Page<UserGamePost> page) {
+        List<UserGamePost> content = page.getContent();
+        List<Long> coverIds = content.stream()
+                .map(p -> p.getGame().getCover())
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+        Map<Long, String> coverUrlMap = new HashMap<>();
+        if (!coverIds.isEmpty()) {
+            coverService.getCoversByIds(coverIds)
+                    .forEach(dto -> coverUrlMap.put(dto.getId(), dto.getUrl()));
+        }
+        List<UserGamePostDto> dtos = content.stream()
+                .map(p -> {
+                    Long coverId = p.getGame().getCover();
+                    return UserGamePostDto.from(p, coverId != null ? coverUrlMap.get(coverId) : null);
+                })
+                .toList();
+        return new PageImpl<>(dtos, page.getPageable(), page.getTotalElements());
     }
 
     private Condition getCondition(String condition) {
