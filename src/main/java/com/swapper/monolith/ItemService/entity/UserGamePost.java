@@ -8,6 +8,7 @@ import jakarta.persistence.*;
 import org.hibernate.annotations.Type;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+import org.springframework.data.domain.DomainEvents;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -65,5 +66,10 @@ public class UserGamePost extends BaseModel {
     @Enumerated(EnumType.STRING)
     @Column(name="listing_state", nullable = false)
     ListingState listingState;
+//
+//    @DomainEvents
+//    public void domainOperation(){
+//
+//    }
 
 }
