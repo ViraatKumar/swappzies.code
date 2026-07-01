@@ -27,6 +27,14 @@ public enum ApiResponses {
     TRADE_CANNOT_TRADE_OWN_LISTING(HttpStatus.BAD_REQUEST, "You cannot trade with yourself"),
     TRADE_INVALID_STATUS_TRANSITION(HttpStatus.CONFLICT, "Trade cannot be updated in its current state"),
     RENTAL_INVALID_STATUS_TRANSITION(HttpStatus.CONFLICT, "Rental cannot be updated in its current state"),
+    CHAT_CONVERSATION_NOT_FOUND(HttpStatus.NOT_FOUND, "Conversation not found"),
+    CHAT_NOT_A_PARTICIPANT(HttpStatus.FORBIDDEN, "You are not a participant in this conversation"),
+    CHAT_NO_ACCEPTED_TRADE(HttpStatus.FORBIDDEN, "Chat is only available after a trade is accepted between you and the other user"),
+    CHAT_COUNTERPARTY_NOT_FOUND(HttpStatus.NOT_FOUND, "Counterparty user not found"),
+    CHAT_INVALID_MESSAGE_TYPE_FIELDS(HttpStatus.BAD_REQUEST, "Message fields do not match the declared message type"),
+    CHAT_MESSAGE_NOT_FOUND(HttpStatus.NOT_FOUND, "Message not found"),
+    CHAT_PRESET_NOT_FOUND(HttpStatus.NOT_FOUND, "Preset message not found"),
+    CHAT_PRESET_INACTIVE(HttpStatus.CONFLICT, "Preset message is not active"),
     ;
     HttpStatus httpStatus;
     String message;
