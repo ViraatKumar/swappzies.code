@@ -5,6 +5,8 @@ import com.swapper.monolith.ItemService.constants.OfferType;
 import com.swapper.monolith.ItemService.constants.Platform;
 import com.swapper.monolith.ItemService.dto.ListingFilterRequest;
 import com.swapper.monolith.ItemService.entity.UserGamePost;
+import com.swapper.monolith.dto.UserDTO;
+import com.swapper.monolith.exception.CustomExceptions.ResourceNotFoundException;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
@@ -17,17 +19,31 @@ public class ListingSpecification {
 
     private ListingSpecification() {}
 
-    public static Specification<UserGamePost> fromFilter(ListingFilterRequest filter) {
+    public static Specification<UserGamePost> fromFilter(ListingFilterRequest filter, String userId) {
         return (root, query, cb) -> {
+            Platform platform = null;
+            try{
+                if(filter.getPlatform() != null) {
+                    platform = Platform.fromDisplayName(filter.getPlatform());
+                }
+
+
+            }
+            catch(IllegalArgumentException e){
+                throw new ResourceNotFoundException("Invalid platform:" + filter.getPlatform());
+
+            }
             List<Predicate> predicates = new ArrayList<>();
 
             // Always exclude soft-deleted listings
             predicates.add(cb.isNull(root.get("deletedAt")));
 
-            if (filter.getPlatformId() != null) {
+            if (userId != null ){
+                predicates.add(cb.notEqual(root.get("user").get("userId"), userId));
+            }
+            if (filter.getPlatform() != null) {
                 try {
-                    Platform platform = Platform.fromDisplayName(filter.getPlatformId());
-                    predicates.add(cb.equal(root.get("id").get("platform"), platform));
+                    predicates.add(cb.equal(root.get("platform"), platform));
                 } catch (IllegalArgumentException ignored) {}
             }
 
