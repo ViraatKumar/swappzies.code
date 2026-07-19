@@ -3,7 +3,7 @@ server:
 
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:7000/trader_stage_db
+    url: ${database_url}
     username: ${username_db}
     password: ${password_db}
   jackson:
