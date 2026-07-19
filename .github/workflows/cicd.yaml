@@ -1,0 +1,33 @@
+name: CICD
+on:
+  push:
+    branches: [prod]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v3
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: 21
+      - name: Build Project
+        run: mvn clean install -DskipTests
+      - name: Login to Docker
+        run: docker login -u ${{secrets.DOCKER_USERNAME}} -p ${{secrets.DOCKER_PASSWORD}}
+      - name: Build Docker Image
+        run: docker build -t ${{secrets.DOCKER_IMAGE_NAME}}
+      - name: Publish Image to docker hub
+        run: docker push ${{secrets.DOCKER_IMAGE_NAME}}
+    deploy:
+      needs: build
+      runs-on: [ip-172-31-20-246]
+      steps:
+        - name: Pull Image from docker hub
+          run: docker pull ${{secrets.DOCKER_IMAGE_NAME}}
+        - name: Delete Old container
+          run: docker rm -f game_market
+        - name: Run docker container
+          run: docker run -d -p 8080:8080 --name game_market ${{secrets.DOCKER_IMAGE_NAME}}

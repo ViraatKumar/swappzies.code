@@ -12,6 +12,7 @@ import com.swapper.monolith.ItemService.entity.GameEntity;
 import com.swapper.monolith.ItemService.entity.UserGamePost;
 import com.swapper.monolith.ItemService.repository.UserGamePostRepository;
 import com.swapper.monolith.ItemService.specification.ListingSpecification;
+import com.swapper.monolith.dto.UserDTO;
 import com.swapper.monolith.exception.CustomExceptions.DuplicatedResourceException;
 import com.swapper.monolith.exception.CustomExceptions.ForbiddenException;
 import com.swapper.monolith.exception.CustomExceptions.InternalServerException;
@@ -20,6 +21,7 @@ import com.swapper.monolith.exception.enums.ApiResponses;
 import com.swapper.monolith.model.User;
 import com.swapper.monolith.repository.UserRepository;
 import com.swapper.monolith.service.UserDetailsImpl;
+import com.swapper.monolith.service.UserService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,6 +31,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.authentication.InsufficientAuthenticationException;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
@@ -88,8 +91,9 @@ public class ItemListingService {
     }
 
     public Page<UserGamePostDto> filterListings(ListingFilterRequest request) {
+        UserDetailsImpl userDetails = (UserDetailsImpl) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         PageRequest pageable = PageRequest.of(request.getPage(), request.getSize());
-        Page<UserGamePost> page = userGamePostRepository.findAll(ListingSpecification.fromFilter(request), pageable);
+        Page<UserGamePost> page = userGamePostRepository.findAll(ListingSpecification.fromFilter(request,userDetails.getUserId()), pageable);
         return toDtoPage(page);
     }
 

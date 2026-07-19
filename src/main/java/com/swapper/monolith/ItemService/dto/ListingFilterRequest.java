@@ -5,7 +5,7 @@ import lombok.Data;
 @Data
 public class ListingFilterRequest {
     Long gameId;
-    String platformId;    // maps to Platform enum
+    String platform;    // maps to Platform enum
     String listingType;   // maps to OfferType enum — null = all
     String condition;     // maps to Condition enum
     Double maxPrice;

@@ -11,6 +11,7 @@ import com.swapper.monolith.TradeService.dto.constant.TradeStatus;
 import com.swapper.monolith.TradeService.entity.Trade;
 import com.swapper.monolith.TradeService.repository.TradeRepository;
 import com.swapper.monolith.dto.UserDTO;
+import com.swapper.monolith.event.TradeAcceptedEvent;
 import com.swapper.monolith.event.TradeCreatedEvent;
 import com.swapper.monolith.exception.CustomExceptions.DuplicatedResourceException;
 import com.swapper.monolith.exception.CustomExceptions.ForbiddenException;
@@ -127,7 +128,15 @@ public class TradeService {
         itemListingService.updateListingItemStatus(trade.getRequestedListing().getListingId(), ItemStatus.NOT_AVAILABLE);
 
         trade.setStatus(TradeStatus.ACCEPTED);
-        return TradeResponse.from(tradeRepository.save(trade));
+        Trade saved = tradeRepository.save(trade);
+
+        eventPublisher.publishEvent(new TradeAcceptedEvent(
+                saved.getTradeId(),
+                saved.getInitiator().getUserId(),
+                saved.getReceiver().getUserId()
+        ));
+
+        return TradeResponse.from(saved);
     }
 
     @Transactional
@@ -177,7 +186,7 @@ public class TradeService {
         return TradeResponse.from(tradeRepository.save(trade));
     }
 
-    @EventListener(ApplicationReadyEvent.class)
+//    @EventListener(ApplicationReadyEvent.class)
     private Trade findTrade(String tradeId) {
         return tradeRepository.findByTradeId(tradeId)
                 .orElseThrow(() -> new ResourceNotFoundException(ApiResponses.TRADE_NOT_FOUND.getMessage()));
