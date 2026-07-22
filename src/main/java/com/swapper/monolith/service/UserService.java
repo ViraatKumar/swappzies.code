@@ -71,10 +71,9 @@ public class UserService  {
     }
     public UserDTO getCurrentAuthenticatedUser(){
         UserDetailsImpl userDetails = (UserDetailsImpl) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        String id = userDetails.getUserId();
         User user = userRepository.findByUserId(userDetails.getUserId()).orElse(null);
         if(user == null){
-            return null;
+            throw new UsernameNotFoundException("User not found" + userDetails.getUsername());
         }
         return UserDTO.from(user);
     }
