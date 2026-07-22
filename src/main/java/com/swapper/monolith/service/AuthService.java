@@ -95,4 +95,13 @@ public class AuthService {
         userRepository.save(user);
         tokenService.markUsed(resetToken.getToken());
     }
+
+    // admin exclusive
+    public void resetPassword(String username, String password){
+        User user = userService.findByUsername(username);
+        user.setPassword(passwordEncoder.encode(password));
+
+        userRepository.save(user);
+
+    }
 }
