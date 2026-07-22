@@ -10,6 +10,9 @@ import com.swapper.monolith.TradeService.dto.TradeResponse;
 import com.swapper.monolith.TradeService.dto.constant.TradeStatus;
 import com.swapper.monolith.TradeService.entity.Trade;
 import com.swapper.monolith.TradeService.repository.TradeRepository;
+import com.swapper.monolith.dto.UserDTO;
+import com.swapper.monolith.event.TradeAcceptedEvent;
+import com.swapper.monolith.event.TradeCreatedEvent;
 import com.swapper.monolith.exception.CustomExceptions.DuplicatedResourceException;
 import com.swapper.monolith.exception.CustomExceptions.ForbiddenException;
 import com.swapper.monolith.exception.CustomExceptions.ResourceNotFoundException;
@@ -20,6 +23,9 @@ import com.swapper.monolith.service.UserDetailsImpl;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -34,6 +40,7 @@ public class TradeService {
     private final TradeRepository tradeRepository;
     private final ItemListingService itemListingService;
     private final UserRepository userRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public TradeResponse initiateTrade(CreateTradeRequest request, UserDetailsImpl principal) {
@@ -79,6 +86,8 @@ public class TradeService {
         trade.setStatus(TradeStatus.PENDING);
         trade.setNotes(request.getNotes());
 
+        TradeCreatedEvent tradeCreatedEvent = new TradeCreatedEvent(UserDTO.from(initiator),UserDTO.from(receiver),request);
+        eventPublisher.publishEvent(tradeCreatedEvent);
         return TradeResponse.from(tradeRepository.save(trade));
     }
 
@@ -119,7 +128,15 @@ public class TradeService {
         itemListingService.updateListingItemStatus(trade.getRequestedListing().getListingId(), ItemStatus.NOT_AVAILABLE);
 
         trade.setStatus(TradeStatus.ACCEPTED);
-        return TradeResponse.from(tradeRepository.save(trade));
+        Trade saved = tradeRepository.save(trade);
+
+        eventPublisher.publishEvent(new TradeAcceptedEvent(
+                saved.getTradeId(),
+                saved.getInitiator().getUserId(),
+                saved.getReceiver().getUserId()
+        ));
+
+        return TradeResponse.from(saved);
     }
 
     @Transactional
@@ -169,6 +186,7 @@ public class TradeService {
         return TradeResponse.from(tradeRepository.save(trade));
     }
 
+//    @EventListener(ApplicationReadyEvent.class)
     private Trade findTrade(String tradeId) {
         return tradeRepository.findByTradeId(tradeId)
                 .orElseThrow(() -> new ResourceNotFoundException(ApiResponses.TRADE_NOT_FOUND.getMessage()));
