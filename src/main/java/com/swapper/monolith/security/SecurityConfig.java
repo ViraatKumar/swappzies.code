@@ -30,14 +30,14 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SecurityConfig {
     private final SecurityProperties securityProperties;
-    private final List<String> authorizeEndpoints = List.of("/auth/**");
+    private final List<String> authorizeEndpoints = List.of("/auth/**", "/ws/**", "/websocket/**", "/health/**");
     @Bean
     SecurityFilterChain publicEndpointsSecurity(HttpSecurity http, JwtAuthFilter jwtAuthFilter) throws Exception {
 
         http.csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(String.join(",", authorizeEndpoints))
+                        .requestMatchers(authorizeEndpoints.toArray(new String[0]))
                         .permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
