@@ -1,6 +1,7 @@
 package com.swapper.monolith.WishlistService.service;
 
 import com.swapper.monolith.ItemService.entity.GameEntity;
+import com.swapper.monolith.ItemService.service.CoverService;
 import com.swapper.monolith.ItemService.service.GameService;
 import com.swapper.monolith.WishlistService.dto.AddToWishlistRequest;
 import com.swapper.monolith.WishlistService.dto.WishlistItemDto;
@@ -12,7 +13,6 @@ import com.swapper.monolith.exception.CustomExceptions.InternalServerException;
 import com.swapper.monolith.exception.CustomExceptions.ResourceNotFoundException;
 import com.swapper.monolith.exception.enums.ApiResponses;
 import com.swapper.monolith.model.User;
-import com.swapper.monolith.repository.UserRepository;
 import com.swapper.monolith.service.UserDetailsImpl;
 import com.swapper.monolith.service.UserService;
 import jakarta.transaction.Transactional;
@@ -21,9 +21,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 @Slf4j
 @Service
@@ -34,12 +35,29 @@ public class WishlistService {
     private final WishlistRepository wishlistRepository;
     private final GameService gameService;
     private final UserService userService;
+    private final CoverService coverService;
 
     public List<WishlistItemDto> getWishlist(UserDetailsImpl principal) {
-        return wishlistRepository
-                .findByUserId(principal.getUserId())
-                .stream()
-                .map(WishlistItemDto::from)
+        List<WishlistItem> wishlistItems = wishlistRepository.findByUserId(principal.getUserId());
+
+        List<Long> coverIds = wishlistItems.stream()
+                .map(item -> item.getGame().getCover())
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+
+        Map<Long, String> coverUrlMap = new HashMap<>();
+        if (!coverIds.isEmpty()) {
+            coverService.getCoversByIds(coverIds)
+                    .forEach(dto -> coverUrlMap.put(dto.getId(), dto.getUrl()));
+        }
+
+        return wishlistItems.stream()
+                .map(item -> {
+                    Long coverId = item.getGame().getCover();
+                    String coverUrl = coverId != null ? coverUrlMap.get(coverId) : null;
+                    return WishlistItemDto.from(item, coverUrl);
+                })
                 .toList();
     }
 
@@ -62,7 +80,9 @@ public class WishlistService {
         item.setGame(game);
 
         try {
-            return WishlistItemDto.from(wishlistRepository.save(item));
+            WishlistItem saved = wishlistRepository.save(item);
+            String coverUrl = resolveCoverUrl(game.getCover());
+            return WishlistItemDto.from(saved, coverUrl);
         } catch (DataIntegrityViolationException e) {
             throw new DuplicatedResourceException(ApiResponses.WISHLIST_GAME_ALREADY_EXISTS);
         } catch (Exception e) {
@@ -80,6 +100,14 @@ public class WishlistService {
         }
 
         wishlistRepository.delete(item);
+    }
+
+    private String resolveCoverUrl(Long coverId) {
+        if (coverId == null) return null;
+        return coverService.getCoversByIds(List.of(coverId)).stream()
+                .findFirst()
+                .map(dto -> dto.getUrl())
+                .orElse(null);
     }
 
     private boolean wishListFull(String userId){

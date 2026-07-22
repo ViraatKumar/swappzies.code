@@ -36,7 +36,7 @@ public class UserGamePostDto {
     String description;
     int featuredPriority;
     ListingState listingState;
-    public static UserGamePostDto from(UserGamePost userGamePost) {
+    public static UserGamePostDto from(UserGamePost userGamePost, String coverUrl) {
         GameMapper gameMapper = new GameMapper();
         GameDto game = gameMapper.toDto(userGamePost.getGame());
         UserDTO user = UserDTO.from(userGamePost.getUser());
@@ -44,11 +44,10 @@ public class UserGamePostDto {
                 .listingId(userGamePost.getListingId())
                 .user(user)
                 .game(game)
-                .listingId(userGamePost.getListingId())
                 .username(user.getUsername())
                 .gameName(game.getName())
                 .postDate(userGamePost.getCreatedDate())
-                .coverUrl(null)
+                .coverUrl(coverUrl)
                 .platform(userGamePost.getPlatform())
                 .condition(userGamePost.getCondition())
                 .itemStatus(userGamePost.getItemStatus())
