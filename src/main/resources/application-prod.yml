@@ -1,0 +1,20 @@
+spring:
+  datasource:
+    url: ${database_url}
+    username: ${username_db}
+    password: ${password_db}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+  mail:
+    username: ${username_mail}
+    password: ${username_password}
+
+security:
+  secret-key: ${secret_key}
+
+twitch-api:
+  client_id: ${twitch_client_id}
+  client_secret: ${twitch_client_secret}

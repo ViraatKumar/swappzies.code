@@ -1,0 +1,110 @@
+name: CICD
+on:
+  push:
+    branches: [prod]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    environment: PRODUCTION
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '24'
+
+      - name: Build Project
+        run: mvn clean install -DskipTests
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build Docker Image
+        run: docker build -t batman1724/game-market:latest .
+
+      - name: Publish Image to Docker Hub
+        run: docker push batman1724/game-market:latest
+
+  deploy:
+    needs: build
+    runs-on: [GameMarketRunner]
+    environment: PRODUCTION  # <--- This was missing!
+    steps:
+      - name: Verify Secrets are Loaded
+        run: |
+          echo "Checking if environment variables are populated on the runner..."
+          
+          missing=0
+          check() {
+            if [ -z "$2" ]; then
+              echo "❌ ERROR: $1 is missing or empty!"
+              missing=1
+            fi
+          }
+          
+          check DATABASE_URL         "${{ secrets.DATABASE_URL }}"
+          check USERNAME_DB          "${{ secrets.USERNAME_DB }}"
+          check PASSWORD_DB          "${{ secrets.PASSWORD_DB }}"
+          check SECRET_KEY           "${{ secrets.SECRET_KEY }}"
+          check USERNAME_MAIL        "${{ secrets.USERNAME_MAIL }}"
+          check USERNAME_PASSWORD    "${{ secrets.USERNAME_PASSWORD }}"
+          check TWITCH_CLIENT_ID     "${{ secrets.TWITCH_CLIENT_ID }}"
+          check TWITCH_CLIENT_SECRET "${{ secrets.TWITCH_CLIENT_SECRET }}"
+          
+          if [ "$missing" = "1" ]; then
+            exit 1
+          fi
+          
+          echo "✅ SUCCESS: All required secrets are populated."
+
+      - name: Pull Image from Docker Hub
+        run: docker pull batman1724/game-market:latest
+
+      - name: Delete Old container
+        run: docker rm -f game_market || true
+
+      - name: Run docker container
+        run: >
+          docker run -d -p 5001:5001 --name game_market
+          -e SPRING_PROFILES_ACTIVE=prod
+          -e "database_url=${{ secrets.DATABASE_URL }}"
+          -e "username_db=${{ secrets.USERNAME_DB }}"
+          -e "password_db=${{ secrets.PASSWORD_DB }}"
+          -e "secret_key=${{ secrets.SECRET_KEY }}"
+          -e "username_mail=${{ secrets.USERNAME_MAIL }}"
+          -e "username_password=${{ secrets.USERNAME_PASSWORD }}"
+          -e "twitch_client_id=${{ secrets.TWITCH_CLIENT_ID }}"
+          -e "twitch_client_secret=${{ secrets.TWITCH_CLIENT_SECRET }}"
+          batman1724/game-market:latest
+
+      - name: Confirm Application and Database Startup Status
+        run: |
+          echo "Waiting for /health to respond..."
+
+          for i in $(seq 1 30); do
+            # If the container died, stop polling and dump logs immediately.
+            if [ "$(docker inspect -f '{{.State.Running}}' game_market 2>/dev/null)" != "true" ]; then
+              echo "❌ CRITICAL: Container is no longer running (attempt $i)."
+              echo "=== CONTAINER LOGS ==="
+              docker logs game_market || true
+              exit 1
+            fi
+
+            if curl -fs http://localhost:5001/health > /dev/null; then
+              echo "✅ SUCCESS: /health returned 200 after ${i} attempt(s)."
+              exit 0
+            fi
+
+            sleep 2
+          done
+
+          echo "❌ CRITICAL: /health did not respond within 60s."
+          echo "=== CONTAINER LOGS ==="
+          docker logs game_market || true
+          exit 1
