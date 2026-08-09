@@ -16,10 +16,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.http.HttpMethod;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -66,6 +72,12 @@ public class PlatformService {
         }
         return platformRepository.findAllByIdIn(ids).stream().map(PlatformEntity::getName).toList();
     }
+
+    public Map<Long, String> getPlatformNameMap(Collection<Long> ids) {
+        if (ids == null || ids.isEmpty()) return Collections.emptyMap();
+        return platformRepository.findAllByIdIn(new ArrayList<>(ids)).stream()
+                .collect(Collectors.toMap(PlatformEntity::getId, PlatformEntity::getName));
+    }
     private List<PlatformEntity> getFromIGDB(){
 
         try {
@@ -80,6 +92,25 @@ public class PlatformService {
         }
         catch(Exception e){
             throw new RuntimeException(e.getMessage());
+        }
+    }
+
+    /**
+     * This needs to be triggered if
+     * 1. new platform is added tht we previously didnt have stored so we enable the platform
+     *
+     * Not handling below right now
+     * 2. if there is a deletion of a game in anyway and games of this platform no longer exist we can get rid of it safely
+     * @param platform
+     * @param isEnabled
+     */
+    @Async
+    @Transactional
+    public void togglePlatformEnablement(Platform platform, boolean isEnabled){
+        PlatformEntity entity = platformRepository.findByName(platform.getDisplayName());
+        if (entity != null) {
+            entity.setEnabled(isEnabled);
+            platformRepository.save(entity);
         }
     }
 }

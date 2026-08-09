@@ -33,6 +33,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.authentication.InsufficientAuthenticationException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -50,6 +51,7 @@ public class ItemListingService {
     private final UserRepository userRepository;
     private final GameService gameService;
     private final CoverService coverService;
+    private final PlatformService platformService;
 
 
     @Transactional
@@ -68,6 +70,7 @@ public class ItemListingService {
             throw new DuplicatedResourceException(ApiResponses.DUPLICATED_RESOURCE);
         }
         UserGamePost userGamePost = persistListing(request, user, game);
+        platformService.togglePlatformEnablement(userGamePost.getPlatform(),true);
         return toDto(userGamePost);
     }
 
@@ -91,8 +94,15 @@ public class ItemListingService {
     }
 
     public Page<UserGamePostDto> filterListings(ListingFilterRequest request) {
-        UserDetailsImpl userDetails = (UserDetailsImpl) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         PageRequest pageable = PageRequest.of(request.getPage(), request.getSize());
+
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if(authentication.getPrincipal().equals("anonymousUser")) {
+            return toDtoPage(userGamePostRepository.findAll(ListingSpecification.fromFilter(request,null),pageable));
+        }
+        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+
         Page<UserGamePost> page = userGamePostRepository.findAll(ListingSpecification.fromFilter(request,userDetails.getUserId()), pageable);
         return toDtoPage(page);
     }
@@ -159,21 +169,15 @@ public class ItemListingService {
         listing.setFeaturedPriority(priority);
         return toDto(userGamePostRepository.save(listing));
     }
-    public Page<UserGamePostDto> getUserActiveGamePosts(UserDetailsImpl userDetailsImpl) {
-        Pageable page = Pageable.ofSize(10);
+    public Page<UserGamePostDto> getUserActiveGamePosts(UserDetailsImpl userDetailsImpl,int pageNo,int pageSize,String fetchType) {
+        Pageable page = PageRequest.of(pageNo, pageSize);
         Page<UserGamePost> result = userGamePostRepository.findByUserIdAndListingState(userDetailsImpl.getUserId(), ListingState.ACTIVE, page);
         return toDtoPage(result);
     }
 
     private UserGamePostDto toDto(UserGamePost listing) {
         Long coverId = listing.getGame().getCover();
-        String coverUrl = null;
-        if (coverId != null) {
-            coverUrl = coverService.getCoversByIds(List.of(coverId)).stream()
-                    .findFirst()
-                    .map(dto -> dto.getUrl())
-                    .orElse(null);
-        }
+        String coverUrl = coverService.getCoverUrlFromDb(coverId);
         return UserGamePostDto.from(listing, coverUrl);
     }
 

@@ -7,6 +7,7 @@ import com.swapper.monolith.ItemService.dto.UserGamePost.UserGamePostDto;
 import com.swapper.monolith.ItemService.service.ItemListingService;
 import com.swapper.monolith.service.UserDetailsImpl;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
@@ -18,12 +19,12 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/v1/listings")
 @RequiredArgsConstructor
-@PreAuthorize("hasAnyAuthority('USER')")
 public class ItemListingController {
 
     private final ItemListingService itemListingService;
 
     @PostMapping
+    @PreAuthorize("hasAnyAuthority('USER')")
     public ResponseEntity<UserGamePostDto> createListing(@Valid @RequestBody CreateListingRequest request) {
         return ResponseEntity.ok().body(itemListingService.createListing(request));
     }
@@ -33,12 +34,20 @@ public class ItemListingController {
         return ResponseEntity.ok(itemListingService.filterListings(request));
     }
 
+    @GetMapping("/me")
+    @PreAuthorize("hasAnyAuthority('USER')")
+    public ResponseEntity<Page<UserGamePostDto>> getUsersListings(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue="10") @Max(value=100) int pageSize,String fetchType) {
+        UserDetailsImpl principal = (UserDetailsImpl) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        return ResponseEntity.ok(itemListingService.getUserActiveGamePosts(principal,page,pageSize, fetchType));
+    }
+
     @GetMapping("/{listingId}")
     public ResponseEntity<UserGamePostDto> getListingById(@PathVariable String listingId) {
         return ResponseEntity.ok(itemListingService.getListingById(listingId));
     }
 
     @PatchMapping("/{listingId}")
+    @PreAuthorize("hasAnyAuthority('USER')")
     public ResponseEntity<UserGamePostDto> updateListing(
             @PathVariable String listingId,
             @RequestBody UpdateListingRequest request) {
@@ -54,11 +63,5 @@ public class ItemListingController {
                 .getAuthentication().getPrincipal();
         itemListingService.deleteListing(listingId, principal);
         return ResponseEntity.ok().build();
-    }
-
-    @GetMapping("/me")
-    public ResponseEntity<Page<UserGamePostDto>> getUsersListings() {
-        UserDetailsImpl principal = (UserDetailsImpl) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        return ResponseEntity.ok(itemListingService.getUserActiveGamePosts(principal));
     }
 }

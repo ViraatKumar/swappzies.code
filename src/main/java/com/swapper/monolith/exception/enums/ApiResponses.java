@@ -35,6 +35,7 @@ public enum ApiResponses {
     CHAT_MESSAGE_NOT_FOUND(HttpStatus.NOT_FOUND, "Message not found"),
     CHAT_PRESET_NOT_FOUND(HttpStatus.NOT_FOUND, "Preset message not found"),
     CHAT_PRESET_INACTIVE(HttpStatus.CONFLICT, "Preset message is not active"),
+    VAULT_ENTRY_NOT_FOUND(HttpStatus.NOT_FOUND, "Vault entry not found"),
     ;
     HttpStatus httpStatus;
     String message;

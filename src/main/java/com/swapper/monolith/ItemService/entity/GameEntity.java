@@ -5,8 +5,11 @@ import com.vladmihalcea.hibernate.type.json.JsonBinaryType;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 import lombok.experimental.FieldDefaults;
 import org.hibernate.annotations.Type;
 import java.time.Instant;
@@ -14,9 +17,12 @@ import java.util.List;
 import java.util.UUID;
 
 @Entity
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@EqualsAndHashCode(of = "id")
+@ToString(of = {"id", "name", "slug"})
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Table(name = "game")
 public class GameEntity {

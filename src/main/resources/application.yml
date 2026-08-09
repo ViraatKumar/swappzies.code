@@ -1,5 +1,9 @@
 server:
   port: 5001
+  tomcat:
+    threads:
+      max: 50
+      min-spare: 10
 
 spring:
   datasource:
@@ -12,7 +16,10 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update
-    show-sql: true
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
 
   mail:
     host: smtp.gmail.com

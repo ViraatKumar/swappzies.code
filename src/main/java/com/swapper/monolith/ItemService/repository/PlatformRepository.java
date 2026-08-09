@@ -14,6 +14,6 @@ public interface PlatformRepository extends JpaRepository<PlatformEntity, Long> 
     List<PlatformEntity> findAllByNameIn(List<String> names);
     @Query(value = "SELECT DISTINCT(name) FROM platform where enabled=true",nativeQuery = true)
     List<String> findDistinctNames();
-
+    PlatformEntity findByName(String name);
     List<PlatformEntity> findAllByIdIn(Collection<Long> ids);
 }

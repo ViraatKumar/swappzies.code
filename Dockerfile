@@ -22,4 +22,11 @@ ENV SPRING_PROFILES_ACTIVE=prod
 
 EXPOSE 5001
 
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["java", \
+  "-Xms128m", "-Xmx200m", \
+  "-XX:MaxMetaspaceSize=128m", \
+  "-XX:+UseG1GC", \
+  "-XX:MaxGCPauseMillis=200", \
+  "-XX:+HeapDumpOnOutOfMemoryError", \
+  "-XX:HeapDumpPath=/tmp/heap.hprof", \
+  "-jar", "app.jar"]

@@ -22,6 +22,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Slf4j
 @Service
@@ -60,16 +61,14 @@ public class GameService {
         Page<GameEntity> gameEntities = gameRepository.findGamesOfSimilarName(gameName,pageable);
         GameSearchResponse gameSearchResponse = new GameSearchResponse(gameEntities.stream().map(gameMapper::toDto).toList());
         if(isResponseStrong(gameSearchResponse)){
-            Map<Long, String> coverUrlMap = buildCoverUrlMap(gameSearchResponse.getGameDtoList());
-            return gameSearchResponse.getGameDtoList().stream().map(dto -> create(dto, coverUrlMap)).toList();
+            List<GameDto> dtos = gameSearchResponse.getGameDtoList();
+            return mapToResponses(dtos);
         }
-        logger.warn("Weak response from DB - Searching API");
+        logger.warn("Weak response from DB - falling back to IGDB for '{}'", gameName);
 
-        // if not strong enough then we make call to the IGDB API
         GameSearchResponse twitchResponse = gameApi.searchByGameName(gameName);
-        logger.info("Game Search Response from API: {}", twitchResponse.getGameDtoList());
+        logger.debug("IGDB returned {} games for '{}'", twitchResponse.getGameDtoList().size(), gameName);
 
-        // async call
         ingestionService.populateDB(
                 twitchResponse.getGameDtoList(),
                 GameDto::getId,
@@ -78,8 +77,7 @@ public class GameService {
                 gameRepository::saveAll
         );
 
-        Map<Long, String> coverUrlMap = buildCoverUrlMap(twitchResponse.getGameDtoList());
-        return twitchResponse.getGameDtoList().stream().map(dto -> create(dto, coverUrlMap)).toList();
+        return mapToResponses(twitchResponse.getGameDtoList());
     }
 
     public Page<GameResponse> searchGames(GameFilterRequest filter) {
@@ -106,18 +104,22 @@ public class GameService {
                     gameRepository::saveAll
             );
 
-            Map<Long, String> coverUrlMap = buildCoverUrlMap(igdbResponse.getGameDtoList());
-            List<GameResponse> igdbMapped = igdbResponse.getGameDtoList().stream()
-                    .map(dto -> create(dto, coverUrlMap)).toList();
+            List<GameResponse> igdbMapped = mapToResponses(igdbResponse.getGameDtoList());
             return new PageImpl<>(igdbMapped, pageable, igdbMapped.size());
         }
 
-        Map<Long, String> coverUrlMap = buildCoverUrlMap(dbDtoPage.getContent());
-        return dbDtoPage.map(dto -> create(dto, coverUrlMap));
+        List<GameDto> content = dbDtoPage.getContent();
+        Map<Long, String> coverUrlMap = buildCoverUrlMap(content);
+        Map<Long, String> platformMap = buildPlatformNameMap(content);
+        Map<Long, String> genreMap = buildGenreNameMap(content);
+        return dbDtoPage.map(dto -> create(dto, coverUrlMap, platformMap, genreMap));
     }
 
     public GameEntity getGameById(long id) {
         return gameRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Game not found"));
+    }
+    public GameDto getGameDtoById(long id) {
+        return gameMapper.toDto(getGameById(id));
     }
 
     private GameProcessedFilters getProcessedFilters(GameFilterRequest gameFilterRequest) {
@@ -187,16 +189,45 @@ public class GameService {
                 .collect(Collectors.toMap(CoverDto::getId, CoverDto::getUrl));
     }
 
-    private GameResponse create(GameDto gameDto, Map<Long, String> coverUrlMap) {
+    private List<GameResponse> mapToResponses(List<GameDto> dtos) {
+        Map<Long, String> coverUrlMap = buildCoverUrlMap(dtos);
+        Map<Long, String> platformMap = buildPlatformNameMap(dtos);
+        Map<Long, String> genreMap = buildGenreNameMap(dtos);
+        return dtos.stream().map(dto -> create(dto, coverUrlMap, platformMap, genreMap)).toList();
+    }
+
+    private GameResponse create(GameDto gameDto, Map<Long, String> coverUrlMap,
+                                 Map<Long, String> platformMap, Map<Long, String> genreMap) {
         GameResponse gameResponse = new GameResponse();
         gameResponse.setId(gameDto.getId());
         gameResponse.setName(gameDto.getName());
-        gameResponse.setPlatform(platformService.getPlatformFromIds(gameDto.getPlatforms()));
-        gameResponse.setGenre(genreService.getGenresByIds(gameDto.getGenres()));
+        gameResponse.setPlatform(resolveNames(gameDto.getPlatforms(), platformMap));
+        gameResponse.setGenre(resolveNames(gameDto.getGenres(), genreMap));
         if (gameDto.getCover() != null) {
             gameResponse.setCoverUrl(coverUrlMap.get(gameDto.getCover()));
         }
         return gameResponse;
+    }
+
+    private List<String> resolveNames(List<Long> ids, Map<Long, String> nameMap) {
+        if (ids == null || ids.isEmpty()) return null;
+        return ids.stream().map(nameMap::get).filter(Objects::nonNull).toList();
+    }
+
+    private Map<Long, String> buildPlatformNameMap(List<GameDto> dtos) {
+        Set<Long> ids = dtos.stream()
+                .filter(d -> d.getPlatforms() != null)
+                .flatMap(d -> d.getPlatforms().stream())
+                .collect(Collectors.toSet());
+        return platformService.getPlatformNameMap(ids);
+    }
+
+    private Map<Long, String> buildGenreNameMap(List<GameDto> dtos) {
+        Set<Long> ids = dtos.stream()
+                .filter(d -> d.getGenres() != null)
+                .flatMap(d -> d.getGenres().stream())
+                .collect(Collectors.toSet());
+        return genreService.getGenreNameMap(ids);
     }
 
     public List<GameEntity> getGamesByIds(List<Long> gameIds) {

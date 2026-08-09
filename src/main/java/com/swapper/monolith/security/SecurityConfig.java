@@ -2,6 +2,7 @@ package com.swapper.monolith.security;
 
 import com.swapper.monolith.config.SecurityProperties;
 import com.swapper.monolith.security.SecurityConfiguration.JwtAuthFilter;
+import com.swapper.monolith.security.SecurityConfiguration.JwtAuthenticationEntryPoint;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
@@ -30,9 +31,11 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SecurityConfig {
     private final SecurityProperties securityProperties;
-    private final List<String> authorizeEndpoints = List.of("/auth/**", "/ws/**", "/websocket/**", "/health/**");
+    private final List<String> authorizeEndpoints = List.of("/auth/**", "/ws/**", "/websocket/**", "/health/**", "/api/v1/listings/**", "/api/v1/data/platforms");
     @Bean
-    SecurityFilterChain publicEndpointsSecurity(HttpSecurity http, JwtAuthFilter jwtAuthFilter) throws Exception {
+    SecurityFilterChain publicEndpointsSecurity(HttpSecurity http,
+                                                JwtAuthFilter jwtAuthFilter,
+                                                JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint) throws Exception {
 
         http.csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
@@ -41,6 +44,7 @@ public class SecurityConfig {
                         .permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
+                .exceptionHandling(ex -> ex.authenticationEntryPoint(jwtAuthenticationEntryPoint))
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
         return http.build();

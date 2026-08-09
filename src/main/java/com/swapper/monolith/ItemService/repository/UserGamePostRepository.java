@@ -15,6 +15,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 @Repository
 public interface UserGamePostRepository extends JpaRepository<UserGamePost, String>,
@@ -35,4 +36,8 @@ public interface UserGamePostRepository extends JpaRepository<UserGamePost, Stri
 
     @Query("SELECT ugp FROM UserGamePost ugp WHERE ugp.user.userId = :userId AND ugp.game.id = :gameId AND ugp.platform = :platform AND ugp.deletedAt IS NULL")
     Optional<UserGamePost> findActiveByUserGamePlatform(@Param("userId") String userId, @Param("gameId") Long gameId, @Param("platform") Platform platform);
+
+
+    @Query("SELECT DISTINCT ugp.platform FROM UserGamePost ugp")
+    Stream<Platform> findDistinctPlatformsInUse();
 }

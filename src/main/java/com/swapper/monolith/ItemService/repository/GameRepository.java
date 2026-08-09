@@ -27,4 +27,7 @@ public interface GameRepository extends JpaRepository<GameEntity, Long>, JpaSpec
     @Query(value = "SELECT g.id FROM game g WHERE g.id IN :ids"
             ,nativeQuery = true)
     List<Long> findIdsByIdLn(@Param("ids") Set<Long> ids);
+
+    @Query("SELECT g.cover FROM GameEntity g WHERE g.id IN :ids AND g.cover IS NOT NULL")
+    List<Long> findCoverIdsByIds(@Param("ids") List<Long> ids);
 }

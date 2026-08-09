@@ -95,9 +95,9 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(InsufficientAuthenticationException.class)
     public ResponseEntity<?> insufficientAuthenticationException(InsufficientAuthenticationException e, HttpServletRequest request){
         LOGGER.error(exceptionString,e.getMessage());
-        return ResponseEntity.status(403).body(ErrorResponse.errorBuilder()
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ErrorResponse.errorBuilder()
                 .message(e.getMessage())
-        .status(HttpStatus.UNAUTHORIZED)
+                .status(HttpStatus.UNAUTHORIZED)
                 .path(request.getServletPath()));
     }
 }

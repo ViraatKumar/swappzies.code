@@ -18,7 +18,11 @@ import org.springframework.http.HttpMethod;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -89,6 +93,12 @@ public class GenreService {
     public List<GenreDto> getGenresByName(List<String> genreNames){
         List<GenreEntity> genreEntity = genreRepository.findAllByNameIn(genreNames);
         return genreEntity.stream().map(GenreMapper::toDto).toList();
+    }
+
+    public Map<Long, String> getGenreNameMap(Collection<Long> ids) {
+        if (ids == null || ids.isEmpty()) return Collections.emptyMap();
+        return genreRepository.findAllByIdIn(new ArrayList<>(ids)).stream()
+                .collect(Collectors.toMap(GenreEntity::getId, GenreEntity::getName));
     }
 
 }

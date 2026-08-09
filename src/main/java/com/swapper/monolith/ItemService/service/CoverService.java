@@ -3,9 +3,9 @@ package com.swapper.monolith.ItemService.service;
 import com.swapper.monolith.ItemService.dto.CoverDto;
 import com.swapper.monolith.ItemService.dto.CoverRequest;
 import com.swapper.monolith.ItemService.entity.Cover;
-import com.swapper.monolith.ItemService.entity.GameEntity;
 import com.swapper.monolith.ItemService.mapper.CoverMapper;
 import com.swapper.monolith.ItemService.repository.CoverRepository;
+import com.swapper.monolith.ItemService.repository.GameRepository;
 import com.swapper.monolith.exception.CustomExceptions.ResourceNotFoundException;
 import com.swapper.monolith.external.twitch.GameApi;
 import lombok.extern.slf4j.Slf4j;
@@ -24,29 +24,34 @@ public class CoverService {
     private final CoverMapper coverMapper;
     private final GameApi gameApi;
     private final IngestionService ingestionService;
-    private final GameService gameService;
+    private final GameRepository gameRepository;
 
-    public CoverService(CoverRepository coverRepository, CoverMapper coverMapper, GameApi gameApi, IngestionService ingestionService, GameService gameService) {
+    public CoverService(CoverRepository coverRepository, CoverMapper coverMapper, GameApi gameApi, IngestionService ingestionService, GameRepository gameRepository) {
         this.coverRepository = coverRepository;
         this.coverMapper = coverMapper;
         this.gameApi = gameApi;
         this.ingestionService = ingestionService;
-        this.gameService = gameService;
+        this.gameRepository = gameRepository;
     }
 
     public List<CoverDto> getCoverUrls(CoverRequest coverRequest) {
-        List<Long> coverIds = gameService.getGamesByIds(coverRequest.getGameIds()).stream()
-                .map(GameEntity::getCover)
-                .filter(Objects::nonNull)
-                .toList();
+        List<Long> coverIds = gameRepository.findCoverIdsByIds(coverRequest.getGameIds());
         if (coverIds.isEmpty()) {
             throw new ResourceNotFoundException("no games were found from the game ids - " + coverRequest.getGameIds());
         }
         return fetchCoversByIds(coverIds);
     }
 
+    public String getCoverUrlFromDb(Long coverId) {
+        if (coverId == null) return null;
+        return coverRepository.findById(coverId).map(Cover::getUrl).orElse(null);
+    }
+
     public List<CoverDto> getCoversByIds(List<Long> coverIds) {
         return fetchCoversByIds(coverIds);
+    }
+    public CoverDto getCoverById(Long coverId) {
+        return fetchCoversByIds(Collections.singletonList(coverId)).getFirst();
     }
 
     private List<CoverDto> fetchCoversByIds(List<Long> coverIds) {
